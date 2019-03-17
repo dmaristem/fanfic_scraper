@@ -8,7 +8,7 @@ from typing import List
 def simple_get(url:str):
     """
     Attempts to get the content at 'url' by making an HTTP GET request.
-    If the content-type of response is some kind of HTML/XML, return the text content (a string?), otherwise return None.
+    If the content-type of response is some kind of HTML/XML, return the text content, otherwise return None.
 
     # >>> from fanfic_scraper import simple_get
     >>> raw_html = simple_get('https://www.fanfiction.net/s/8559914/1/Fledgling')
@@ -61,22 +61,13 @@ def get_num_of_chapters(url: str) -> int:
 
     if response is not None:
         html = BeautifulSoup(response, 'html.parser')
-        # options = html.find_all('option value')
         option_tags = html.select("option")
-        # option_tags = html.select("span select option:nth-of-type()")
-        # option_tags = html.select("span > select > option['value']")
         values = [o.get('value') for o in option_tags]
-
         # one-chapter situation
         if not values:
-            print(1)
             return 1
         # multi-chapter situation
         else:
-            print(int(values[-1]))
-            # print(o)
-            # print(options)
-            # print(values[-1])
             return int(values[-1])
 
     else:
@@ -94,9 +85,6 @@ def slice_link(url: str) -> str:
     title = first_slice[1]
     chap = '/{}/'
     link = id + chap + title
-    # print(id, title)
-    # print(url)
-    # print(first_slice, second_slice)
     return link
 
 def generate_links(url: str) -> List:
@@ -112,13 +100,10 @@ def generate_links(url: str) -> List:
         lst = []
         for n in range(1, num_chaps + 1):
             lst.append(link.format(n)) #string format method
-            # lst.append(f'https://www.fanfiction.net/s/8559914/{n}/Fledgling')  #f-string option; works for Python 3.6+
-        # print(lst)
         return lst
 
 
 def get_title(url: str) -> str:
-
     """
     Get the title of the fanfiction, without any non-alphnumeric characters between words.
     """
@@ -131,7 +116,6 @@ def get_title(url: str) -> str:
 #Select and extract from the raw HTML using BeautifulSoup, to get text
 # The BeautifulSoup constructor parses raw HTML strings and produces an object that mirrors the HTML document's structure
 # The object includes a lot of methods to select, view, and manipulatethe DOM nodes and text content
-
 #Extract the textual content of a chapter:
 def get_text(url: str)-> None:
     """
@@ -144,17 +128,8 @@ def get_text(url: str)-> None:
         response = simple_get(link)
         if response is not None:
             html = BeautifulSoup(response, 'html.parser')
-            #     "ResultSet object has no attribute '%s'. You're probably treating a list of items like a single item. Did you call find_all() when you meant to call find()?" % key
-            # AttributeError: ResultSet object has no attribute 'get_text'. You're probably treating a list of items like a single item. Did you call find_all() when you meant to call find()?
-            # p = html.find_all('p').get_text()
-            # print(p)
-
-            for paragraph in html.select('p'): #select all <p> tags from the HTML document
+            for paragraph in html.select('p'): 
                 f.write(paragraph.get_text() + '\r\n')
-                # f.write(paragraph.get_text())
-
-
-                # print(paragraph.get_text()) #print out the text in all the <p> tags
         else:
             #Raise an exception if we failed to get any data from the url
             raise Exception('Error retrieving contents at {}'.format(url))
@@ -162,28 +137,12 @@ def get_text(url: str)-> None:
 
 
 if __name__ == '__main__':
-    # get_text('https://www.fanfiction.net/s/8559914/1/Fledgling')
-    # get_num_of_chapters('https://www.fanfiction.net/s/8559914/1/Fledgling')
-    # slice_link('https://www.fanfiction.net/s/8559914/1/Fledgling')
-    # generate_links('https://www.fanfiction.net/s/8559914/1/Fledgling')
-    # get_title("https://www.fanfiction.net/s/5782108/1/Harry-Potter-and-the-Methods-of-Rationality")
-    # get_text("https://m.fanfiction.net/s/5182916/1/a-fish") # ISSUES with finding num of chapters. FIGURED IT OUT: because it's the mobile page. "m.fanfiction.."
-    # get_text("https://www.fanfiction.net/s/4656343/1/Personally-I-d-Rather-Lick-Sand")
-    # get_text("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
-    # get_num_of_chapters("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
-    # get_num_of_chapters("https://www.fanfiction.net/s/4656343/1/Personally-I-d-Rather-Lick-Sand")
-
+    # get_text("https://m.fanfiction.net/s/5182916/1/a-fish") # ISSUES with finding num of chapter because it's the mobile page. "m.fanfiction.."
+   
     # stopped at the end of chapter 5
     get_text("https://www.fanfiction.net/s/7880959/1/Ad-Infinitum") # ISSUE UnicodeEncodeError: 'charmap' codec can't encode character '\u2015' in position 0: character maps to <undefined>
 
-    # get_text("https://www.fanfiction.net/s/7552826/1/An-Unfound-Door")
 
-"""
-from fanfic_scraper import simple_get, get_text, get_num_of_chapters
-get_num_of_chapters('https://www.fanfiction.net/s/8559914/1/Fledgling')
-get_num_of_chapters("https://www.fanfiction.net/s/5782108/1/Harry-Potter-and-the-Methods-of-Rationality")
-get_text('https://www.fanfiction.net/s/8559914/19/Fledgling')
-get_text('https://www.theglobeandmail.com/life/travel/article-from-edmonton-to-ecuador-10-places-to-visit-in-2019/')
-"""
+
 
 #TODO: convert .txt to .docx or .pdf, never take in mobile version of fanfiction.net, UnicodeEncodeError, include Chapter number and title in the .txt file
