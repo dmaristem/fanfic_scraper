@@ -1,6 +1,6 @@
 # fanfic_scraper
 Background: 
-Fanfiction.net is a recreational website that allows writers to display their written work based off of the universes of (usually) published works/media. Here 'fanfic' refers to a fanfiction story.  
+Fanfiction.net is a recreational website that allows anyone to write stories in the universes of (usually) published works/media. Here 'fanfic' refers to a fanfiction story.  
 
 Problem: 
 1) Fanfiction.net disables the copy option on its desktop version.
