@@ -9,14 +9,6 @@ def simple_get(url:str):
     """
     Attempts to get the content at 'url' by making an HTTP GET request.
     If the content-type of response is some kind of HTML/XML, return the text content, otherwise return None.
-
-    # >>> from fanfic_scraper import simple_get
-    >>> raw_html = simple_get('https://www.fanfiction.net/s/8559914/1/Fledgling')
-    >>> len(raw_html)
-    276646
-    >>> no_html = simple_get('https://www.fanfiction.net/s/8559914/19/Fledgling')
-    >>> no_html is None
-    True
     """
     try:
         #The closing() function ensures that any network resources are freed when they go out of scope in the with block.
