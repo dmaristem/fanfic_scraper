@@ -81,10 +81,10 @@ def slice_link(url: str) -> str:
     """
     first_slice = url.rsplit('/', 1)  # first would print something like ['https://www.fanfiction.net/s/8559914/1', 'Fledgling']
     second_slice = first_slice[0].rsplit('/', 1) # second would print something like ['https://www.fanfiction.net/s/8559914', '1']
-    id = second_slice[0]
+    id_ = second_slice[0]
     title = first_slice[1]
     chap = '/{}/'
-    link = id + chap + title
+    link = id_ + chap + title
     return link
 
 def generate_links(url: str) -> List:
