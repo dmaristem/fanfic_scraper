@@ -13,5 +13,5 @@ Given the link to a fanfic, save the fanfic as a .docx or .pdf file automaticall
 Note: This is for the preservation of selected works of fiction that I deem to be exceptional, not for any replication and distribution of other people's creative output for my own profit. 
 
 ## Tools:
-Python, Python libraries: BeautifulSoup4, requests, reportlab
+Python, Python libraries: BeautifulSoup4, requests, ReportLab
 
