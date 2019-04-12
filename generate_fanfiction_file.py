@@ -61,18 +61,24 @@ def get_num_of_chapters(url: str) -> int:
         html = BeautifulSoup(response, 'html.parser')
         # option_tags = html.select("option")  # research select vs. find vs. find_all; find returns the first occurrence
         option_tags = html.find("select")
-        values = [o.get('value') for o in option_tags.find_all("option")]
+        print(option_tags)
+        if option_tags is not None:
+            values = [o.get('value') for o in option_tags.find_all("option")] # AttributeError: 'NoneType' object has no attribute 'find_all'; create a check for html.find("select") first. What does find() return?
+            return values[-1]
+        else:
+            # print(1)
+            return 1
         # values = [o.get('value') for o in option_tags]
         # print(values)
         # unique_values = list(OrderedDict.fromkeys(values))  # a soln to the duplicate items in list issue. alternatively: select the first occurrence of option
         # print(unique_values)
         # one-chapter situation
-        if not values:
-            return 1
-        # multi-chapter situation
-        else:
-            print(values[-1])
-            return values[-1]
+        # if not values:
+        #     return 1
+        # # multi-chapter situation
+        # else:
+        #     print(values[-1])
+        #     return values[-1]
             # print(int(unique_values[-1]))
             # return int(unique_values[-1])
 
@@ -142,17 +148,19 @@ def get_chap_name(url: str) -> List:
         # for option in option_tags.find("option"):
 
         # l = []
-        for option in option_tags:
-            # iteration += 1
-            # if iteration == 3:
-            #     return
-            # print(option_tags)
-            # l.append(option.get_text(' '))
-            text = option.get_text('||')
-            lst_chap_names = text.split('||')
-            print(lst_chap_names)
-            # print(option)
-            # print(option.get_text(' '))
+        if option_tags is not None:
+            for option in option_tags:
+                # iteration += 1
+                # if iteration == 3:
+                #     return
+                # print(option_tags)
+                # l.append(option.get_text(' '))
+                text = option.get_text('|||') # ||| as a unique marker to later split by
+                lst_chap_names = text.split('|||')
+                print(lst_chap_names)
+                return lst_chap_names
+                # print(option)
+                # print(option.get_text(' '))
 
         # option_lst = [print(option) for option in option_tags]
         # print(option_tags)
@@ -173,13 +181,11 @@ def get_chap_name(url: str) -> List:
         # unique_chap_names = list(OrderedDict.fromkeys(chap_names))
 
         # one-chapter situation
-        if not lst_chap_names:
+        else:
             return []
         # multi-chapter situation
-        else:
             # print(unique_chap_names)
             # print(chap_names)
-            return lst_chap_names
             # return unique_chap_names
 
 #Select and extract from the raw HTML using BeautifulSoup, to get text
@@ -311,8 +317,10 @@ if __name__ == '__main__':
 
     # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
     # get_num_of_chapters("https://www.fanfiction.net/s/6483376/1/Sparks-Fly-Tires-Skid")
-    get_num_of_chapters("https://www.fanfiction.net/s/10079742/1/The-Shepard")
-    get_chap_name("https://www.fanfiction.net/s/10079742/1/The-Shepard")
+    get_num_of_chapters("https://www.fanfiction.net/s/8383682/1/i-ll-write-you-harmony-in-c")
+    get_chap_name("https://www.fanfiction.net/s/8383682/1/i-ll-write-you-harmony-in-c")
+    # get_num_of_chapters("https://www.fanfiction.net/s/10079742/1/The-Shepard")
+    # get_chap_name("https://www.fanfiction.net/s/10079742/1/The-Shepard")
 
     # get_text("https://www.fanfiction.net/s/5182916/1/a-fish")
     # simple_get("https://www.fanfiction.net/s/5182916/1/a-fish")
