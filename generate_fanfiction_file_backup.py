@@ -59,22 +59,18 @@ def get_num_of_chapters(url: str) -> int:
 
     if response is not None:
         html = BeautifulSoup(response, 'html.parser')
-        # option_tags = html.select("option")  # research select vs. find vs. find_all; find returns the first occurrence
-        option_tags = html.find("select")
-        values = [o.get('value') for o in option_tags.find_all("option")]
-        # values = [o.get('value') for o in option_tags]
+        option_tags = html.select("option")  # research select vs. find vs. find_all
+        values = [o.get('value') for o in option_tags]
         print(values)
-        # unique_values = list(OrderedDict.fromkeys(values))  # a soln to the duplicate items in list issue. alternatively: select the first occurrence of option
-        # print(unique_values)
+        unique_values = list(OrderedDict.fromkeys(values))  # a soln to the duplicate items in list issue. alternatively: select the first occurrence of option
+        print(unique_values)
         # one-chapter situation
         if not values:
             return 1
         # multi-chapter situation
         else:
-            print(values[-1])
-            return values[-1]
-            # print(int(unique_values[-1]))
-            # return int(unique_values[-1])
+            print(int(unique_values[-1]))
+            return int(unique_values[-1])
 
     else:
         #Raise an exception if we failed to get any data from the url
@@ -275,10 +271,7 @@ if __name__ == '__main__':
 
     # get_num_of_chapters("https://www.fanfiction.net/s/5182916/1/a-fish")
     # get_chap_name("https://www.fanfiction.net/s/5182916/1/a-fish")
-
-    # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
-    # get_num_of_chapters("https://www.fanfiction.net/s/6483376/1/Sparks-Fly-Tires-Skid")
-    get_num_of_chapters("https://www.fanfiction.net/s/10079742/1/The-Shepard")
+    generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
     # get_text("https://www.fanfiction.net/s/5182916/1/a-fish")
     # simple_get("https://www.fanfiction.net/s/5182916/1/a-fish")
 
