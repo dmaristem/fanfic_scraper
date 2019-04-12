@@ -63,7 +63,7 @@ def get_num_of_chapters(url: str) -> int:
         option_tags = html.find("select")
         values = [o.get('value') for o in option_tags.find_all("option")]
         # values = [o.get('value') for o in option_tags]
-        print(values)
+        # print(values)
         # unique_values = list(OrderedDict.fromkeys(values))  # a soln to the duplicate items in list issue. alternatively: select the first occurrence of option
         # print(unique_values)
         # one-chapter situation
@@ -120,34 +120,67 @@ def get_title(url: str) -> str:
     return normal_title
 
 def get_chap_name(url: str) -> List:
+    """
+    Get a list of all the chapter names/titles of the fanfiction.
+    :param url:
+    :return:
+    """
     response = simple_get(url)
 
     if response is not None:
         html = BeautifulSoup(response, 'html.parser')
-        option_tags = html.select_one("select")
-        for option in option_tags.find_all("option"):
-            print(option)
-            print(option.next_sibling)
+        # option_tags = html.select_one("select")
+
+        option_tags = html.find("select")
+        # chap_names = [o.text for o in option_tags.find_all("option")]
+
+        # for option in option_tags.find_all("option"):
+        #     print(option.get_text())
+        #     print(option.next_sibling)
+        # iteration = 0
+
+        # for option in option_tags.find("option"):
+
+        # l = []
+        for option in option_tags:
+            # iteration += 1
+            # if iteration == 3:
+            #     return
+            # print(option_tags)
+            # l.append(option.get_text(' '))
+            text = option.get_text('||')
+            lst_chap_names = text.split('||')
+            print(lst_chap_names)
+            # print(option)
+            # print(option.get_text(' '))
+
         # option_lst = [print(option) for option in option_tags]
         # print(option_tags)
         # print(option_lst)
-        unique_option_tags = list(OrderedDict.fromkeys(option_tags))
+
+        # unique_option_tags = list(OrderedDict.fromkeys(option_tags))
+
         # print(option_tags)
         # print(unique_option_tags)
-        chap_names = [o.text for o in unique_option_tags]
+
+        # chap_names = [o.text for o in unique_option_tags]
 
         # for o in option_tags:
         #     print(option_tags)
         #     print(o)
         #     print(o.text)
-        unique_chap_names = list(OrderedDict.fromkeys(chap_names))
+
+        # unique_chap_names = list(OrderedDict.fromkeys(chap_names))
+
         # one-chapter situation
-        if not chap_names:
+        if not lst_chap_names:
             return []
         # multi-chapter situation
         else:
             # print(unique_chap_names)
-            return unique_chap_names
+            # print(chap_names)
+            return lst_chap_names
+            # return unique_chap_names
 
 #Select and extract from the raw HTML using BeautifulSoup, to get text
 # The BeautifulSoup constructor parses raw HTML strings and produces an object that mirrors the HTML document's structure
@@ -279,6 +312,8 @@ if __name__ == '__main__':
     # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
     # get_num_of_chapters("https://www.fanfiction.net/s/6483376/1/Sparks-Fly-Tires-Skid")
     get_num_of_chapters("https://www.fanfiction.net/s/10079742/1/The-Shepard")
+    get_chap_name("https://www.fanfiction.net/s/10079742/1/The-Shepard")
+
     # get_text("https://www.fanfiction.net/s/5182916/1/a-fish")
     # simple_get("https://www.fanfiction.net/s/5182916/1/a-fish")
 
