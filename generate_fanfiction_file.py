@@ -248,67 +248,27 @@ def get_text(url: str)-> str:
     print(lst_p)
     return lst_p
 
-
-# List[List] vs. Dict[str, List]
-# def get_text_dict(url: str)-> Dict:
-#     """
-#     Downloads the fanfiction page(s) and returns a dictionary, with the key being the chapter's title,
-#     and the value being a list of text.
-#     """
-#     lst_links = generate_links(url)
-#     text_dict = {}
-#     for link in lst_links:
-#         response = simple_get(link)
-#         if response is not None:
-#             html = BeautifulSoup(response, 'html.parser')
-#             for paragraph in html.select('p'):
-#                 # text_dict[].append(paragraph.get_text())
-#         else:
-#             # Raise an exception if we failed to get any data from the url
-#             raise Exception('Error retrieving contents at {}'.format(url))
-#     # print(text_dict)
-#     return text_dict
-
 def generate_pdf(url: str) -> None:
-    # c = canvas.Canvas(get_title(url) + '.pdf', pagesize=letter)
-    # c.drawString(100, 750, get_text(url))
-    # c.save()
+    # Registering the desired font
     pdfmetrics.registerFont(TTFont('Georgia', 'Georgia Regular font.ttf'))
     pdfmetrics.registerFont(TTFont('Georgia Italic', 'georgia italic.ttf'))
     pdfmetrics.registerFont(TTFont('Georgia Bold', 'georgia bold.ttf'))
     pdfmetrics.registerFont(TTFont('Georgia Bold Italic', 'Georgia Bold Italic font.ttf'))
 
-    # 2nd positional param is bool flag for italic
-    # 3rd positional param is bool flag for boldface
+        # 2nd positional param is bool flag for italic
+        # 3rd positional param is bool flag for boldface
     addMapping('Georgia', 0, 0, 'Georgia')
     addMapping('Georgia', 0, 1, 'Georgia Italic')
     addMapping('Georgia', 1, 0, 'Georgia Bold')
     addMapping('Georgia', 1, 1, 'Georgia Bold Italic')
 
-    doc = SimpleDocTemplate(get_title(url) + '.pdf', pagesize=letter,
-                            rightMargin=72, leftMargin=72,
-                            topMargin=72, bottomMargin=18)
-
-    Story = []
-    lst_chap_names = get_chap_name(url)
-    # print(lst_chap_names)
-    lst_chap_links = generate_links(url)
-
-    styles = getSampleStyleSheet()
+    # Styling
     style = ParagraphStyle(
         name="Normal",
         fontSize=11.5,
         fontName="Georgia",
         leading=15
     )
-    # styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY, fontName="OpenSans", fontSize=12)) # fontName being overriden by Sample Style
-    # styles['ao3'] = ParagraphStyle(
-    #     'ao3',
-    #     parent=styles['Normal'],
-    #     fontSize=11,
-    #     leading=8,
-    #     fontName='verdana'
-    # )
     h1 = ParagraphStyle(
         name='Heading1',
         fontSize=14,
@@ -317,6 +277,14 @@ def generate_pdf(url: str) -> None:
         alignment=TA_CENTER
     )
 
+    # Create the document
+    doc = SimpleDocTemplate(get_title(url) + '.pdf', pagesize=letter,
+                            rightMargin=72, leftMargin=72,
+                            topMargin=72, bottomMargin=18)
+
+    Story = []
+    lst_chap_names = get_chap_name(url)
+    lst_chap_links = generate_links(url)
 
     for i in range(len(lst_chap_names)):
         Story.append(Spacer(1, 12))
@@ -331,67 +299,14 @@ def generate_pdf(url: str) -> None:
     Story.append(Spacer(1, 12))
     doc.build(Story)
 
-def cursormoves1(canvas):
-    from reportlab.lib.units import inch
-    textobject = canvas.beginText()
-    textobject.setTextOrigin(inch, 2.5*inch)
-    textobject.setFont("Helvetica-Oblique", 14)
-    # for line in lyrics:
-    #     textobject.textLine(line)
-    textobject.textline('Hello World!')
-    textobject.setFillGray(0.4)
-    textobject.textLines('''
-    With many apologies to the Beach Boys
-    and anyone else who finds this objectionable
-    ''')
-    canvas.drawText(textobject)
-
-def textobject_demo(url: str):
-    my_canvas = canvas.Canvas(get_title(url) + '.pdf',
-                              pagesize=letter)
-    # Create textobject
-    textobject = my_canvas.beginText()
-
-    # Set text location (x, y)
-    textobject.setTextOrigin(100, 730)
-
-    # Set font face and size
-    textobject.setFont('Times-Roman', 12)
-
-    # Write a line of text + carriage return
-    textobject.textLine(text=get_text(url))
-
-    # Change text color
-    textobject.setFillColor(colors.red)
-
-    # # Write red text
-    # textobject.textLine(text='Python rocks in red!')
-
-    # Write text to the canvas
-    my_canvas.drawText(textobject)
-
-    my_canvas.save()
 
 if __name__ == '__main__':
     # get_text("https://m.fanfiction.net/s/5182916/1/a-fish") # ISSUES with finding num of chapter because it's the mobile page. "m.fanfiction.."
-   
     # stopped at the end of chapter 5
     # get_text("https://www.fanfiction.net/s/7880959/1/Ad-Infinitum") # ISSUE UnicodeEncodeError: 'charmap' codec can't encode character '\u2015' in position 0: character maps to <undefined>
-    # cursormoves1(canvas)
-    # textobject_demo("https://www.fanfiction.net/s/5182916/1/a-fish")
-
-    # get_num_of_chapters("https://www.fanfiction.net/s/5182916/1/a-fish")
-    # get_chap_name("https://www.fanfiction.net/s/5182916/1/a-fish")
 
     generate_pdf("https://www.fanfiction.net/s/10079742/1/The-Shepard")
     # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
-    # get_num_of_chapters("https://www.fanfiction.net/s/6483376/1/Sparks-Fly-Tires-Skid")
-    # get_num_of_chapters("https://www.fanfiction.net/s/8383682/1/i-ll-write-you-harmony-in-c")
-    # get_chap_name("https://www.fanfiction.net/s/8383682/1/i-ll-write-you-harmony-in-c")
-    # get_num_of_chapters("https://www.fanfiction.net/s/10079742/1/The-Shepard")
-    # get_chap_name("https://www.fanfiction.net/s/10079742/1/The-Shepard")
 
-    # get_text("https://www.fanfiction.net/s/5182916/1/a-fish")
-    # simple_get("https://www.fanfiction.net/s/5182916/1/a-fish")
 
-#TODO: convert .txt to .docx or .pdf, never take in mobile version of fanfiction.net, UnicodeEncodeError, include Chapter number and title in the .txt file
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, include Chapter number and title in the .txt file
