@@ -5,6 +5,15 @@ from bs4 import BeautifulSoup
 from typing import List, Dict
 from collections import OrderedDict
 from reportlab.pdfgen import canvas
+from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.lib.fonts import addMapping
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import inch
+
 
 # Download web pages to get the raw HTML, with the help of the requests package
 
@@ -62,25 +71,14 @@ def get_num_of_chapters(url: str) -> int:
         # option_tags = html.select("option")  # research select vs. find vs. find_all; find returns the first occurrence
         option_tags = html.find("select")
         print(option_tags)
-        if option_tags is not None:
+        if option_tags is not None: #multi-chapter situation
             values = [o.get('value') for o in option_tags.find_all("option")] # AttributeError: 'NoneType' object has no attribute 'find_all'; create a check for html.find("select") first. What does find() return?
-            return values[-1]
-        else:
-            # print(1)
+            return int(values[-1])
+        else: #one-chapter situation
             return 1
-        # values = [o.get('value') for o in option_tags]
-        # print(values)
+
         # unique_values = list(OrderedDict.fromkeys(values))  # a soln to the duplicate items in list issue. alternatively: select the first occurrence of option
-        # print(unique_values)
-        # one-chapter situation
-        # if not values:
-        #     return 1
-        # # multi-chapter situation
-        # else:
-        #     print(values[-1])
-        #     return values[-1]
-            # print(int(unique_values[-1]))
-            # return int(unique_values[-1])
+
 
     else:
         #Raise an exception if we failed to get any data from the url
@@ -143,12 +141,8 @@ def get_chap_name(url: str) -> List:
         # for option in option_tags.find_all("option"):
         #     print(option.get_text())
         #     print(option.next_sibling)
-        # iteration = 0
-
         # for option in option_tags.find("option"):
-
-        # l = []
-        if option_tags is not None:
+        if option_tags is not None: # multi-chapter situation
             for option in option_tags:
                 # iteration += 1
                 # if iteration == 3:
@@ -163,13 +157,7 @@ def get_chap_name(url: str) -> List:
                 # print(option.get_text(' '))
 
         # option_lst = [print(option) for option in option_tags]
-        # print(option_tags)
-        # print(option_lst)
-
         # unique_option_tags = list(OrderedDict.fromkeys(option_tags))
-
-        # print(option_tags)
-        # print(unique_option_tags)
 
         # chap_names = [o.text for o in unique_option_tags]
 
@@ -180,13 +168,9 @@ def get_chap_name(url: str) -> List:
 
         # unique_chap_names = list(OrderedDict.fromkeys(chap_names))
 
-        # one-chapter situation
-        else:
+        else: # one-chapter situation
             return []
-        # multi-chapter situation
-            # print(unique_chap_names)
-            # print(chap_names)
-            # return unique_chap_names
+
 
 #Select and extract from the raw HTML using BeautifulSoup, to get text
 # The BeautifulSoup constructor parses raw HTML strings and produces an object that mirrors the HTML document's structure
@@ -212,24 +196,57 @@ def generate_txt(url: str)-> None:
             raise Exception('Error retrieving contents at {}'.format(url))
     f.close()
 
+# all chapter links were generated inside the get_text function
+# def get_text(url: str)-> str:
+#     """
+#     Downloads the fanfiction page(s) and returns a string of the entire text of the chapter(s).
+#     """
+#     lst_links = generate_links(url)
+#     text = ''
+#     for link in lst_links:
+#         response = simple_get(link)
+#         if response is not None:
+#             html = BeautifulSoup(response, 'html.parser')
+#             for paragraph in html.select('p'):
+#                 text += paragraph.get_text() + '\n'
+#         else:
+#             #Raise an exception if we failed to get any data from the url
+#             raise Exception('Error retrieving contents at {}'.format(url))
+#     # print(text)
+#     return text
+
+# each time get_text() is called, it returns all the text as a single string from the given URL
+# def get_text(url: str)-> str:
+#     """
+#     Downloads the fanfiction page(s) and returns a string of the entire text of the chapter(s).
+#     """
+#     text = ''
+#     response = simple_get(url)
+#     if response is not None:
+#         html = BeautifulSoup(response, 'html.parser')
+#         for paragraph in html.select('p'):
+#             text += paragraph.get_text() + '\n'
+#     else:
+#         #Raise an exception if we failed to get any data from the url
+#         raise Exception('Error retrieving contents at {}'.format(url))
+#     # print(text)
+#     return text
 
 def get_text(url: str)-> str:
     """
     Downloads the fanfiction page(s) and returns a string of the entire text of the chapter(s).
     """
-    lst_links = generate_links(url)
-    text = ''
-    for link in lst_links:
-        response = simple_get(link)
-        if response is not None:
-            html = BeautifulSoup(response, 'html.parser')
-            for paragraph in html.select('p'):
-                text += paragraph.get_text() + '\n'
-        else:
-            #Raise an exception if we failed to get any data from the url
-            raise Exception('Error retrieving contents at {}'.format(url))
-    # print(text)
-    return text
+    lst_p = []
+    response = simple_get(url)
+    if response is not None:
+        html = BeautifulSoup(response, 'html.parser')
+        for paragraph in html.select('p'):
+            lst_p.append(paragraph.get_text())
+    else:
+        #Raise an exception if we failed to get any data from the url
+        raise Exception('Error retrieving contents at {}'.format(url))
+    print(lst_p)
+    return lst_p
 
 
 # List[List] vs. Dict[str, List]
@@ -253,9 +270,66 @@ def get_text(url: str)-> str:
 #     return text_dict
 
 def generate_pdf(url: str) -> None:
-    c = canvas.Canvas(get_title(url) + '.pdf')
-    c.drawString(100, 750, get_text(url))
-    c.save()
+    # c = canvas.Canvas(get_title(url) + '.pdf', pagesize=letter)
+    # c.drawString(100, 750, get_text(url))
+    # c.save()
+    pdfmetrics.registerFont(TTFont('Georgia', 'Georgia Regular font.ttf'))
+    pdfmetrics.registerFont(TTFont('Georgia Italic', 'georgia italic.ttf'))
+    pdfmetrics.registerFont(TTFont('Georgia Bold', 'georgia bold.ttf'))
+    pdfmetrics.registerFont(TTFont('Georgia Bold Italic', 'Georgia Bold Italic font.ttf'))
+
+    # 2nd positional param is bool flag for italic
+    # 3rd positional param is bool flag for boldface
+    addMapping('Georgia', 0, 0, 'Georgia')
+    addMapping('Georgia', 0, 1, 'Georgia Italic')
+    addMapping('Georgia', 1, 0, 'Georgia Bold')
+    addMapping('Georgia', 1, 1, 'Georgia Bold Italic')
+
+    doc = SimpleDocTemplate(get_title(url) + '.pdf', pagesize=letter,
+                            rightMargin=72, leftMargin=72,
+                            topMargin=72, bottomMargin=18)
+
+    Story = []
+    lst_chap_names = get_chap_name(url)
+    # print(lst_chap_names)
+    lst_chap_links = generate_links(url)
+
+    styles = getSampleStyleSheet()
+    style = ParagraphStyle(
+        name="Normal",
+        fontSize=11.5,
+        fontName="Georgia",
+        leading=15
+    )
+    # styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY, fontName="OpenSans", fontSize=12)) # fontName being overriden by Sample Style
+    # styles['ao3'] = ParagraphStyle(
+    #     'ao3',
+    #     parent=styles['Normal'],
+    #     fontSize=11,
+    #     leading=8,
+    #     fontName='verdana'
+    # )
+    h1 = ParagraphStyle(
+        name='Heading1',
+        fontSize=14,
+        leading=16,
+        fontName="Georgia Bold",
+        alignment=TA_CENTER
+    )
+
+
+    for i in range(len(lst_chap_names)):
+        Story.append(Spacer(1, 12))
+        Story.append(Paragraph(lst_chap_names[i], h1))
+        Story.append(Spacer(1, 12))
+        Story.append(Spacer(1, 12))
+        lst_paragraphs = get_text(lst_chap_links[i])
+        for paragraph in lst_paragraphs:
+            Story.append(Paragraph(paragraph, style=style))
+            Story.append(Spacer(1, 12))
+
+    Story.append(Spacer(1, 12))
+    doc.build(Story)
 
 def cursormoves1(canvas):
     from reportlab.lib.units import inch
@@ -271,12 +345,6 @@ def cursormoves1(canvas):
     and anyone else who finds this objectionable
     ''')
     canvas.drawText(textobject)
-
-
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-
 
 def textobject_demo(url: str):
     my_canvas = canvas.Canvas(get_title(url) + '.pdf',
@@ -315,10 +383,11 @@ if __name__ == '__main__':
     # get_num_of_chapters("https://www.fanfiction.net/s/5182916/1/a-fish")
     # get_chap_name("https://www.fanfiction.net/s/5182916/1/a-fish")
 
+    generate_pdf("https://www.fanfiction.net/s/10079742/1/The-Shepard")
     # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
     # get_num_of_chapters("https://www.fanfiction.net/s/6483376/1/Sparks-Fly-Tires-Skid")
-    get_num_of_chapters("https://www.fanfiction.net/s/8383682/1/i-ll-write-you-harmony-in-c")
-    get_chap_name("https://www.fanfiction.net/s/8383682/1/i-ll-write-you-harmony-in-c")
+    # get_num_of_chapters("https://www.fanfiction.net/s/8383682/1/i-ll-write-you-harmony-in-c")
+    # get_chap_name("https://www.fanfiction.net/s/8383682/1/i-ll-write-you-harmony-in-c")
     # get_num_of_chapters("https://www.fanfiction.net/s/10079742/1/The-Shepard")
     # get_chap_name("https://www.fanfiction.net/s/10079742/1/The-Shepard")
 
