@@ -7,7 +7,7 @@ from collections import OrderedDict
 from reportlab.pdfgen import canvas
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.lib.fonts import addMapping
@@ -411,6 +411,7 @@ def generate_pdf(url: str) -> None:
     if profile_dict["updated_date"]:
         Story.append(Paragraph("<strong>Updated on: </strong>" + profile_dict['updated_date'], style=style))
 
+    Story.append(PageBreak())
     # Add in the fanfic
     for i in range(len(lst_chap_names)):
         Story.append(Spacer(1, 12))
@@ -421,6 +422,7 @@ def generate_pdf(url: str) -> None:
         for paragraph in lst_paragraphs:
             Story.append(Paragraph(paragraph, style=style))
             Story.append(Spacer(1, 12))
+        Story.append(PageBreak())
 
     Story.append(Spacer(1, 12))
     doc.build(Story)
@@ -439,4 +441,4 @@ if __name__ == '__main__':
     # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, add italic and bold text where it's supposed to exist in the doc, newpage for each chapter, clean up fanfic_scraper folder
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, clean up fanfic_scraper folder
