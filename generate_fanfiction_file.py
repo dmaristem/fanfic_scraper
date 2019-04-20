@@ -135,7 +135,7 @@ def get_chap_name(url: str) -> List:
         html = BeautifulSoup(response, 'html.parser')
         # option_tags = html.select_one("select")
 
-        option_tags = html.find("select")
+        option_tags = html.find("select", attrs={"id": "chap_select"})
         # chap_names = [o.text for o in option_tags.find_all("option")]
 
         # for option in option_tags.find_all("option"):
@@ -238,7 +238,7 @@ def generate_txt(url: str)-> None:
 
 def get_text(url: str)-> List:
     """
-    Downloads the fanfiction page(s) and returns a string of the entire text of the chapter(s).
+    Downloads the fanfiction page and returns a list of all the paragraphs in a chapter.
     """
     lst_p = []
     response = simple_get(url)
@@ -246,12 +246,17 @@ def get_text(url: str)-> List:
         html = BeautifulSoup(response, 'html.parser')
         for paragraph in html.select('p'):
             # print(paragraph)
-            lst_p.append(paragraph.get_text())
+            # print(type(paragraph))
+            # lst_p.append(paragraph.get_text()) # works, but doesn't preserve italics and bolded text
 
             # lst_p.append(paragraph)
             # first_strip = paragraph.strip('<p>')
+            stringify_replace = str(paragraph).replace("<p>", "", 1).replace("</p>", "", 1).\
+                replace('<span style="text-decoration:underline;">', "").replace("</span>", "")
+            # print(stringify_replace)
+            # print(type(str(first_strip)))
             # second_strip = first_strip.strip('</p>')
-            # lst_p.append(second_strip)
+            lst_p.append(stringify_replace)
     else:
         #Raise an exception if we failed to get any data from the url
         raise Exception('Error retrieving contents at {}'.format(url))
@@ -395,13 +400,6 @@ def generate_pdf(url: str) -> None:
     Story.append(Spacer(1, 12))
     Story.append(Spacer(1, 12))
     # Add in fanfic stats
-    # Story.append(Paragraph("<strong>Rating: </strong>" + profile_dict['rating'] + " - " + "<strong>Fandom: </strong>"
-    #                        + profile_dict['fandom'] + " - " + "<strong>Genre: </strong>" + profile_dict['genre'] +
-    #                        " - " + "<strong>Character(s): </strong>" +profile_dict['characters'] + " - " +
-    #                        "<strong>Words: </strong>" + profile_dict['words'] + " - " +
-    #                        "<strong>Published on: </strong>" + profile_dict['publication_date'] + " - " +
-    #                        "<strong>Status: </strong>" + profile_dict['status'] + " - " +
-    #                        "<strong>Updated on: </strong>" + profile_dict['updated_date'], style=style))
     Story.append(Paragraph("<strong>Rating: </strong>" + profile_dict['rating'], style=style))
     Story.append(Paragraph("<strong>Fandom: </strong>"+ profile_dict['fandom'], style=style))
     Story.append(Paragraph("<strong>Genre: </strong>" + profile_dict['genre'], style=style))
@@ -416,7 +414,7 @@ def generate_pdf(url: str) -> None:
     # Add in the fanfic
     for i in range(len(lst_chap_names)):
         Story.append(Spacer(1, 12))
-        Story.append(Paragraph("Chapter " + lst_chap_names[i], h1))
+        Story.append(Paragraph(lst_chap_names[i], h1))
         Story.append(Spacer(1, 12))
         Story.append(Spacer(1, 12))
         lst_paragraphs = get_text(lst_chap_links[i])
@@ -430,6 +428,8 @@ def generate_pdf(url: str) -> None:
 
 if __name__ == '__main__':
     # get_text("https://m.fanfiction.net/s/5182916/1/a-fish") # ISSUES with finding num of chapter because it's the mobile page. "m.fanfiction.."
+    # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
+    # get_chap_name("https://www.fanfiction.net/s/5182916/1/a-fish")
     # stopped at the end of chapter 5
     # get_text("https://www.fanfiction.net/s/7880959/1/Ad-Infinitum") # ISSUE UnicodeEncodeError: 'charmap' codec can't encode character '\u2015' in position 0: character maps to <undefined>
     # get_text("https://www.fanfiction.net/s/10079742/2/The-Shepard")
