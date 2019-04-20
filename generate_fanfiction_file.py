@@ -285,9 +285,9 @@ def get_profile(url: str) -> Dict:
         if len(lst_dates) != 1:
             updated_date = lst_dates[0].get_text()
             publication_date = lst_dates[1].get_text()
-        publication_date = lst_dates[0].get_text()
-        updated_date = None
-
+        else:
+            publication_date = lst_dates[0].get_text()
+            updated_date = '' # empty string '' evaluates to False (is falsy, but not equal to False)
 
         # a string containing rating, genre, characters, words, and words ...
         stats = profile.find("span", attrs={"class": "xgray"}).get_text()
@@ -302,10 +302,11 @@ def get_profile(url: str) -> Dict:
         if option_tags is not None: # multi-chapter fic
             chapters_split = stats_split[4].split(":") # split() bc I only need the number --- 'Chapters: number"
             chapters = chapters_split[1].strip()
-            words = stats_split[5]
+            words_split = stats_split[5].split(":")
         else:
             chapters = 1
-            words = stats_split[4]
+            words_split = stats_split[4].split(":")
+        words = words_split[1]
         if " Status: Complete " in stats_split:
             status = "Complete"
         else:
@@ -382,8 +383,8 @@ def generate_pdf(url: str) -> None:
     lst_chap_links = generate_links(url)
     profile_dict = get_profile(url)
 
-    # Add fanfic title
-    Story.append(Paragraph(profile_dict['title'], h1))
+    # Add fanfic title and the link to the original fanfic on Fanfiction.net
+    Story.append(Paragraph("<a href=" + lst_chap_links[0] + "><u>" + profile_dict['title'] + "</u></a>", h1))
     Story.append(Spacer(1, 12))
     # Add fanfic author
     Story.append(Paragraph("by " + profile_dict['author'], h2))
@@ -391,7 +392,28 @@ def generate_pdf(url: str) -> None:
     # Add fanfic summary
     Story.append(Paragraph(profile_dict['summary'], style=style))
     Story.append(Spacer(1, 12))
+    Story.append(Spacer(1, 12))
+    Story.append(Spacer(1, 12))
+    # Add in fanfic stats
+    # Story.append(Paragraph("<strong>Rating: </strong>" + profile_dict['rating'] + " - " + "<strong>Fandom: </strong>"
+    #                        + profile_dict['fandom'] + " - " + "<strong>Genre: </strong>" + profile_dict['genre'] +
+    #                        " - " + "<strong>Character(s): </strong>" +profile_dict['characters'] + " - " +
+    #                        "<strong>Words: </strong>" + profile_dict['words'] + " - " +
+    #                        "<strong>Published on: </strong>" + profile_dict['publication_date'] + " - " +
+    #                        "<strong>Status: </strong>" + profile_dict['status'] + " - " +
+    #                        "<strong>Updated on: </strong>" + profile_dict['updated_date'], style=style))
+    Story.append(Paragraph("<strong>Rating: </strong>" + profile_dict['rating'], style=style))
+    Story.append(Paragraph("<strong>Fandom: </strong>"+ profile_dict['fandom'], style=style))
+    Story.append(Paragraph("<strong>Genre: </strong>" + profile_dict['genre'], style=style))
+    Story.append(Paragraph("<strong>Characters: </strong>" + profile_dict['characters'], style=style))
+    Story.append(Paragraph("<strong>Words: </strong>" + profile_dict['words'], style=style))
+    Story.append(Paragraph("<strong>Chapters: </strong>" + profile_dict['chapters'], style=style))
+    Story.append(Paragraph("<strong>Published on: </strong>" + profile_dict['publication_date'], style=style))
+    Story.append(Paragraph("<strong>Status: </strong>" + profile_dict['status'], style=style))
+    if profile_dict["updated_date"]:
+        Story.append(Paragraph("<strong>Updated on: </strong>" + profile_dict['updated_date'], style=style))
 
+    # Add in the fanfic
     for i in range(len(lst_chap_names)):
         Story.append(Spacer(1, 12))
         Story.append(Paragraph("Chapter " + lst_chap_names[i], h1))
@@ -417,4 +439,4 @@ if __name__ == '__main__':
     # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, add italic and bold text where it's supposed to exist in the doc
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, add italic and bold text where it's supposed to exist in the doc, newpage for each chapter, clean up fanfic_scraper folder
