@@ -70,7 +70,7 @@ def get_num_of_chapters(url: str) -> int:
         html = BeautifulSoup(response, 'html.parser')
         # option_tags = html.select("option")  # research select vs. find vs. find_all; find returns the first occurrence
         option_tags = html.find("select")
-        print(option_tags)
+        # print(option_tags)
         if option_tags is not None: #multi-chapter situation
             values = [o.get('value') for o in option_tags.find_all("option")] # AttributeError: 'NoneType' object has no attribute 'find_all'; create a check for html.find("select") first. What does find() return?
             return int(values[-1])
@@ -151,7 +151,7 @@ def get_chap_name(url: str) -> List:
                 # l.append(option.get_text(' '))
                 text = option.get_text('|||') # ||| as a unique marker to later split by
                 lst_chap_names = text.split('|||')
-                print(lst_chap_names)
+                # print(lst_chap_names)
                 return lst_chap_names
                 # print(option)
                 # print(option.get_text(' '))
@@ -170,6 +170,9 @@ def get_chap_name(url: str) -> List:
 
         else: # one-chapter situation
             return []
+    else:
+        # Raise an exception if we failed to get any data from the url
+        raise Exception('Error retrieving contents at {}'.format(url))
 
 
 #Select and extract from the raw HTML using BeautifulSoup, to get text
@@ -232,7 +235,8 @@ def generate_txt(url: str)-> None:
 #     # print(text)
 #     return text
 
-def get_text(url: str)-> str:
+
+def get_text(url: str)-> List:
     """
     Downloads the fanfiction page(s) and returns a string of the entire text of the chapter(s).
     """
@@ -241,12 +245,94 @@ def get_text(url: str)-> str:
     if response is not None:
         html = BeautifulSoup(response, 'html.parser')
         for paragraph in html.select('p'):
+            # print(paragraph)
             lst_p.append(paragraph.get_text())
+
+            # lst_p.append(paragraph)
+            # first_strip = paragraph.strip('<p>')
+            # second_strip = first_strip.strip('</p>')
+            # lst_p.append(second_strip)
     else:
         #Raise an exception if we failed to get any data from the url
         raise Exception('Error retrieving contents at {}'.format(url))
-    print(lst_p)
+    # print(lst_p)
     return lst_p
+
+
+def get_profile(url: str) -> Dict:
+    """
+    Return a dictionary containing the fanfiction's profile information
+    i.e. title, author, publication date, number of chapters, total words,
+    fandom, characters, genre, rating, updated date, summary,  ...
+
+    :param url: The URL of a fanfic at any chapter.
+    """
+
+    response = simple_get(url)
+
+    if response is not None:
+        html = BeautifulSoup(response, 'html.parser')
+        profile = html.find(id="profile_top")
+
+        # Getting the values for the dictionary
+        title = profile.find("b").get_text()
+        author = profile.find("a").get_text()
+        summary = profile.find("div", attrs={"class": "xcontrast_txt"}).get_text()
+        fandom = html.find("span", attrs={"class": "lc-left"}).find_all("a")[1].get_text()
+        rating = profile.find("span", attrs={"class": "xgray"}).find("a").get_text()
+        lst_dates = profile.find("span", attrs={"class": "xgray"}).find_all("span")
+        # Someimtes there are is an updated date, sometimes there isn't one
+        if len(lst_dates) != 1:
+            updated_date = lst_dates[0].get_text()
+            publication_date = lst_dates[1].get_text()
+        publication_date = lst_dates[0].get_text()
+        updated_date = None
+
+
+        # a string containing rating, genre, characters, words, and words ...
+        stats = profile.find("span", attrs={"class": "xgray"}).get_text()
+        stats_split = stats.split("-")
+        for i in range(len(stats_split)):
+            stats_split[i] = stats_split[i].lstrip()
+
+        genre = stats_split[2]
+        characters = stats_split[3]
+        # Checking to see if the fanfic is one-chapter or more
+        option_tags = html.find("select")
+        if option_tags is not None: # multi-chapter fic
+            chapters_split = stats_split[4].split(":") # split() bc I only need the number --- 'Chapters: number"
+            chapters = chapters_split[1].strip()
+            words = stats_split[5]
+        else:
+            chapters = 1
+            words = stats_split[4]
+        if " Status: Complete " in stats_split:
+            status = "Complete"
+        else:
+            status = "In-Progress"
+
+        # Create dictionary
+        profile_dict = {'title': title,
+                        'author': author,
+                        'summary': summary,
+                        'fandom': fandom,
+                        'rating': rating,
+                        'updated_date': updated_date,
+                        'publication_date': publication_date,
+                        'genre': genre,
+                        'characters': characters,
+                        'chapters': chapters,
+                        'words': words,
+                        'status': status
+                        }
+        # print(profile_dict)
+        return profile_dict
+        # print(stats_split)
+        # print(title, author, summary, rating, publication_date, updated_date, fandom, genre, characters, chapters, words, status)
+    else:
+        #Raise an exception if we failed to get any data from the url
+        raise Exception('Error retrieving contents at {}'.format(url))
+
 
 def generate_pdf(url: str) -> None:
     # Registering the desired font
@@ -276,19 +362,39 @@ def generate_pdf(url: str) -> None:
         fontName="Georgia Bold",
         alignment=TA_CENTER
     )
+    h2 = ParagraphStyle(
+        name='Heading2',
+        fontSize=12.5,
+        leading=16,
+        fontName="Georgia",
+        alignment=TA_CENTER
+    )
 
     # Create the document
     doc = SimpleDocTemplate(get_title(url) + '.pdf', pagesize=letter,
                             rightMargin=72, leftMargin=72,
-                            topMargin=72, bottomMargin=18)
+                            topMargin=40, bottomMargin=40)
 
     Story = []
+
+    # Load in data
     lst_chap_names = get_chap_name(url)
     lst_chap_links = generate_links(url)
+    profile_dict = get_profile(url)
+
+    # Add fanfic title
+    Story.append(Paragraph(profile_dict['title'], h1))
+    Story.append(Spacer(1, 12))
+    # Add fanfic author
+    Story.append(Paragraph("by " + profile_dict['author'], h2))
+    Story.append(Spacer(1, 12))
+    # Add fanfic summary
+    Story.append(Paragraph(profile_dict['summary'], style=style))
+    Story.append(Spacer(1, 12))
 
     for i in range(len(lst_chap_names)):
         Story.append(Spacer(1, 12))
-        Story.append(Paragraph(lst_chap_names[i], h1))
+        Story.append(Paragraph("Chapter " + lst_chap_names[i], h1))
         Story.append(Spacer(1, 12))
         Story.append(Spacer(1, 12))
         lst_paragraphs = get_text(lst_chap_links[i])
@@ -304,9 +410,11 @@ if __name__ == '__main__':
     # get_text("https://m.fanfiction.net/s/5182916/1/a-fish") # ISSUES with finding num of chapter because it's the mobile page. "m.fanfiction.."
     # stopped at the end of chapter 5
     # get_text("https://www.fanfiction.net/s/7880959/1/Ad-Infinitum") # ISSUE UnicodeEncodeError: 'charmap' codec can't encode character '\u2015' in position 0: character maps to <undefined>
-
+    # get_text("https://www.fanfiction.net/s/10079742/2/The-Shepard")
     generate_pdf("https://www.fanfiction.net/s/10079742/1/The-Shepard")
+    # get_profile("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
+    # get_profile("https://www.fanfiction.net/s/10079742/6/The-Shepard")
     # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, include Chapter number and title in the .txt file
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, add italic and bold text where it's supposed to exist in the doc
