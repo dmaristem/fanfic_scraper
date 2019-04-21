@@ -300,7 +300,7 @@ def get_profile(url: str) -> Dict:
             chapters = chapters_split[1].strip()
             words_split = stats_split[5].split(":")
         else:
-            chapters = 1
+            chapters = "1"
             words_split = stats_split[4].split(":")
         words = words_split[1]
         if " Status: Complete " in stats_split:
@@ -434,9 +434,10 @@ def generate_pdf(url: str) -> None:
 
     Story.append(PageBreak())
     # Add in the fanfic
-    for i in range(len(lst_chap_names)):
+    for i in range(len(lst_chap_links)):
         Story.append(Spacer(1, 12))
-        Story.append(Paragraph(lst_chap_names[i], h1))
+        if lst_chap_names:
+            Story.append(Paragraph(lst_chap_names[i], h1))
         Story.append(Spacer(1, 12))
         Story.append(Spacer(1, 12))
         lst_paragraphs = get_text(lst_chap_links[i])
@@ -444,6 +445,7 @@ def generate_pdf(url: str) -> None:
             Story.append(Paragraph(paragraph, style=style))
             Story.append(Spacer(1, 12))
         Story.append(PageBreak())
+        # Story.append(Paragraph(str(i), style=style))
 
     Story.append(Spacer(1, 12))
     doc.build(Story)
@@ -451,8 +453,8 @@ def generate_pdf(url: str) -> None:
 
 if __name__ == '__main__':
     # generate_pdf("https://www.fanfiction.net/s/12783369/1/Triptych")
-    generate_pdf("https://www.fanfiction.net/s/11071969/1/A-Casket-Full-of-Victory")
-
+    generate_pdf("https://www.fanfiction.net/s/11528330/1/Klepto")
+    # generate_pdf("https://www.fanfiction.net/s/3227921/1/Knockout")
 
 
 #TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links, boxy stats, same-date update no year issue
