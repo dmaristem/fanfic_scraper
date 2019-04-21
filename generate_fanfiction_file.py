@@ -1,3 +1,4 @@
+import os
 from requests import get
 from requests.exceptions import RequestException
 from contextlib import closing
@@ -242,17 +243,9 @@ def get_text(url: str)-> List:
     if response is not None:
         html = BeautifulSoup(response, 'html.parser')
         for paragraph in html.select('p'):
-            # print(paragraph)
-            # print(type(paragraph))
             # lst_p.append(paragraph.get_text()) # works, but doesn't preserve italics and bolded text
-
-            # lst_p.append(paragraph)
-            # first_strip = paragraph.strip('<p>')
             stringify_replace = str(paragraph).replace("<p>", "", 1).replace("</p>", "", 1).\
                 replace('<span style="text-decoration:underline;">', "").replace("</span>", "")
-            # print(stringify_replace)
-            # print(type(str(first_strip)))
-            # second_strip = first_strip.strip('</p>')
             lst_p.append(stringify_replace)
     else:
         #Raise an exception if we failed to get any data from the url
@@ -331,29 +324,43 @@ def get_profile(url: str) -> Dict:
                         'status': status,
                         'author_link': author_link
                         }
-        # print(profile_dict)
         return profile_dict
-        # print(stats_split)
-        # print(title, author, summary, rating, publication_date, updated_date, fandom, genre, characters, chapters, words, status)
+
     else:
         #Raise an exception if we failed to get any data from the url
         raise Exception('Error retrieving contents at {}'.format(url))
 
 
-def generate_pdf(url: str) -> None:
-    # Registering the desired font
+def get_path(filename: str) -> str:
+    """
+    Return a string that is the path to the fanfiction folder,
+    ending in the pdf file to be created.
+    :param filename: The file name.
+    """
+    dirname = "fanfiction"
+    path = os.path.join(dirname, filename)
+    return path
+
+
+def register_fonts() -> None:
+    """
+    Register the desired font to be used in the PDF.
+    """
     pdfmetrics.registerFont(TTFont('Georgia', 'fonts\Georgia Regular font.ttf'))
     pdfmetrics.registerFont(TTFont('Georgia Italic', 'fonts\georgia italic.ttf'))
     pdfmetrics.registerFont(TTFont('Georgia Bold', 'fonts\georgia bold.ttf'))
     pdfmetrics.registerFont(TTFont('Georgia Bold Italic', 'fonts\Georgia Bold Italic font.ttf'))
 
-        # 2nd positional param is bool flag for italic
-        # 3rd positional param is bool flag for boldface
+    # 2nd positional param is bool flag for italic
+    # 3rd positional param is bool flag for boldface
     addMapping('Georgia', 0, 0, 'Georgia')
     addMapping('Georgia', 0, 1, 'Georgia Italic')
     addMapping('Georgia', 1, 0, 'Georgia Bold')
     addMapping('Georgia', 1, 1, 'Georgia Bold Italic')
 
+
+def generate_pdf(url: str) -> None:
+    register_fonts()
     # Styling
     style = ParagraphStyle(
         name="Normal",
@@ -377,7 +384,9 @@ def generate_pdf(url: str) -> None:
     )
 
     # Create the document
-    doc = SimpleDocTemplate(get_title(url) + '.pdf', pagesize=letter,
+    path = get_path(get_title(url) + '.pdf') # SimpleDocTemplate will take this as a parameter
+    # and create a pdf file in the folder specified by get_path() with the specified name
+    doc = SimpleDocTemplate(path, pagesize=letter,
                             rightMargin=72, leftMargin=72,
                             topMargin=40, bottomMargin=40)
 
@@ -411,6 +420,7 @@ def generate_pdf(url: str) -> None:
                            + lst_chap_links[0] + "</u></a></font>" + ".", style=style))
     Story.append(Spacer(1, 12))
     Story.append(Spacer(1, 12))
+
     # Add in fanfic stats
     Story.append(Paragraph("<strong>Rating: </strong>" + profile_dict['rating'], style=style))
     Story.append(Paragraph("<strong>Fandom: </strong>"+ profile_dict['fandom'], style=style))
@@ -441,16 +451,8 @@ def generate_pdf(url: str) -> None:
 
 
 if __name__ == '__main__':
-    # get_text("https://m.fanfiction.net/s/5182916/1/a-fish") # ISSUES with finding num of chapter because it's the mobile page. "m.fanfiction.."
-    # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
-    # get_chap_name("https://www.fanfiction.net/s/5182916/1/a-fish")
-    # stopped at the end of chapter 5
-    # get_text("https://www.fanfiction.net/s/7880959/1/Ad-Infinitum") # ISSUE UnicodeEncodeError: 'charmap' codec can't encode character '\u2015' in position 0: character maps to <undefined>
-    # get_text("https://www.fanfiction.net/s/10079742/2/The-Shepard")
     generate_pdf("https://www.fanfiction.net/s/10079742/1/The-Shepard")
-    # get_profile("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
-    # get_profile("https://www.fanfiction.net/s/10079742/6/The-Shepard")
-    # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, clean up fanfic_scraper folder, PDF chapter links, save PDF in another folder, boxy stats?
+
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links, boxy stats?
