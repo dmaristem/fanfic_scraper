@@ -270,11 +270,13 @@ def get_profile(url: str) -> Dict:
         profile = html.find(id="profile_top")
 
         # Getting the values for the dictionary
+        # Main values
         title = profile.find("b").get_text()
         author = profile.find("a").get_text()
         author_link = "https://www.fanfiction.net/" + profile.find("a").get('href')
         summary = profile.find("div", attrs={"class": "xcontrast_txt"}).get_text()
         fandom = html.find("span", attrs={"class": "lc-left"}).find_all("a")[1].get_text()
+        # Stats
         rating = profile.find("span", attrs={"class": "xgray"}).find("a").get_text()
         lst_dates = profile.find("span", attrs={"class": "xgray"}).find_all("span")
         # Someimtes there are is an updated date, sometimes there isn't one
@@ -285,9 +287,9 @@ def get_profile(url: str) -> Dict:
             publication_date = lst_dates[0].get_text()
             updated_date = '' # empty string '' evaluates to False (is falsy, but not equal to False)
 
-        # a string containing rating, genre, characters, words, and words ...
+        # a string containing rating, genre, characters, words, status, and more ...
         stats = profile.find("span", attrs={"class": "xgray"}).get_text()
-        stats_split = stats.split("-")
+        stats_split = stats.split(" - ")
         for i in range(len(stats_split)):
             stats_split[i] = stats_split[i].lstrip()
 
@@ -303,7 +305,8 @@ def get_profile(url: str) -> Dict:
             chapters = "1"
             words_split = stats_split[4].split(":")
         words = words_split[1]
-        if " Status: Complete " in stats_split:
+        print(stats_split)
+        if "Status: Complete" in stats_split:
             status = "Complete"
         else:
             status = "In-Progress"
@@ -359,6 +362,10 @@ def register_fonts() -> None:
 
 
 def generate_pdf(url: str) -> None:
+    """
+    Generate the PDF file from the given URL.
+    :param url: A link to a fanfiction on a site such as fanfiction.net.
+    """
     register_fonts()
     # Styling
     style = ParagraphStyle(
@@ -428,9 +435,10 @@ def generate_pdf(url: str) -> None:
     Story.append(Paragraph("<strong>Words: </strong>" + profile_dict['words'], style=style))
     Story.append(Paragraph("<strong>Chapters: </strong>" + profile_dict['chapters'], style=style))
     Story.append(Paragraph("<strong>Published on: </strong>" + profile_dict['publication_date'], style=style))
-    Story.append(Paragraph("<strong>Status: </strong>" + profile_dict['status'], style=style))
     if profile_dict["updated_date"]:
         Story.append(Paragraph("<strong>Updated on: </strong>" + profile_dict['updated_date'], style=style))
+    Story.append(Paragraph("<strong>Status: </strong>" + profile_dict['status'], style=style))
+
 
     Story.append(PageBreak())
     # Add in the fanfic
@@ -453,8 +461,11 @@ def generate_pdf(url: str) -> None:
 
 if __name__ == '__main__':
     # generate_pdf("https://www.fanfiction.net/s/12783369/1/Triptych")
-    generate_pdf("https://www.fanfiction.net/s/11528330/1/Klepto")
+    # generate_pdf("https://www.fanfiction.net/s/11528330/1/Klepto")
     # generate_pdf("https://www.fanfiction.net/s/3227921/1/Knockout")
+    # generate_pdf("https://www.fanfiction.net/s/3501089/1/The-Burning-of-Angels") No characters!!!
+    # generate_pdf("https://www.fanfiction.net/s/11228999/2/Fargo") # Japanese characters
+    generate_pdf("https://www.fanfiction.net/s/5131507/1/The-Squire")
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links, boxy stats, same-date update no year issue
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links, boxy stats, new proile extraction method, japanese characters, understand split() better
