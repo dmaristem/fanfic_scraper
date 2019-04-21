@@ -12,12 +12,9 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.lib.fonts import addMapping
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.units import inch
-
+from reportlab.graphics.shapes import Drawing, Line
 
 # Download web pages to get the raw HTML, with the help of the requests package
-
-
 def simple_get(url:str):
     """
     Attempts to get the content at 'url' by making an HTTP GET request.
@@ -282,6 +279,8 @@ def get_profile(url: str) -> Dict:
         # Getting the values for the dictionary
         title = profile.find("b").get_text()
         author = profile.find("a").get_text()
+        author_link = "https://www.fanfiction.net/" + profile.find("a").get('href')
+        print(author_link)
         summary = profile.find("div", attrs={"class": "xcontrast_txt"}).get_text()
         fandom = html.find("span", attrs={"class": "lc-left"}).find_all("a")[1].get_text()
         rating = profile.find("span", attrs={"class": "xgray"}).find("a").get_text()
@@ -329,7 +328,8 @@ def get_profile(url: str) -> Dict:
                         'characters': characters,
                         'chapters': chapters,
                         'words': words,
-                        'status': status
+                        'status': status,
+                        'author_link': author_link
                         }
         # print(profile_dict)
         return profile_dict
@@ -342,10 +342,10 @@ def get_profile(url: str) -> Dict:
 
 def generate_pdf(url: str) -> None:
     # Registering the desired font
-    pdfmetrics.registerFont(TTFont('Georgia', 'Georgia Regular font.ttf'))
-    pdfmetrics.registerFont(TTFont('Georgia Italic', 'georgia italic.ttf'))
-    pdfmetrics.registerFont(TTFont('Georgia Bold', 'georgia bold.ttf'))
-    pdfmetrics.registerFont(TTFont('Georgia Bold Italic', 'Georgia Bold Italic font.ttf'))
+    pdfmetrics.registerFont(TTFont('Georgia', 'fonts\Georgia Regular font.ttf'))
+    pdfmetrics.registerFont(TTFont('Georgia Italic', 'fonts\georgia italic.ttf'))
+    pdfmetrics.registerFont(TTFont('Georgia Bold', 'fonts\georgia bold.ttf'))
+    pdfmetrics.registerFont(TTFont('Georgia Bold Italic', 'fonts\Georgia Bold Italic font.ttf'))
 
         # 2nd positional param is bool flag for italic
         # 3rd positional param is bool flag for boldface
@@ -359,7 +359,7 @@ def generate_pdf(url: str) -> None:
         name="Normal",
         fontSize=11.5,
         fontName="Georgia",
-        leading=15
+        leading=14.5
     )
     h1 = ParagraphStyle(
         name='Heading1',
@@ -389,14 +389,26 @@ def generate_pdf(url: str) -> None:
     profile_dict = get_profile(url)
 
     # Add fanfic title and the link to the original fanfic on Fanfiction.net
-    Story.append(Paragraph("<a href=" + lst_chap_links[0] + "><u>" + profile_dict['title'] + "</u></a>", h1))
+    Story.append(Paragraph(profile_dict['title'], h1))
     Story.append(Spacer(1, 12))
     # Add fanfic author
-    Story.append(Paragraph("by " + profile_dict['author'], h2))
+    Story.append(Paragraph("by " + "<font color='blue'><a href=" + profile_dict['author_link'] + "><u>" + profile_dict['author'] + "</u></a></font>", h2))
+    Story.append(Spacer(1, 12))
     Story.append(Spacer(1, 12))
     # Add fanfic summary
+    Story.append(Paragraph("<i>Summary:</i>", style=style))
+    Story.append(Spacer(1, 12))
     Story.append(Paragraph(profile_dict['summary'], style=style))
     Story.append(Spacer(1, 12))
+    Story.append(Spacer(1, 12))
+    Story.append(Spacer(1, 12))
+    # <hr> line equivalent
+    d = Drawing(100, 1) # parameters?
+    d.add(Line(0, 20, 455, 20)) # (x1, y1, x2, y2)
+    Story.append(d)
+
+    Story.append(Paragraph("Originally posted at: " + "<font color='blue'><a href=" + lst_chap_links[0] + "><u>"
+                           + lst_chap_links[0] + "</u></a></font>" + ".", style=style))
     Story.append(Spacer(1, 12))
     Story.append(Spacer(1, 12))
     # Add in fanfic stats
@@ -441,4 +453,4 @@ if __name__ == '__main__':
     # generate_pdf("https://www.fanfiction.net/s/5182916/1/a-fish")
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, clean up fanfic_scraper folder
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, clean up fanfic_scraper folder, PDF chapter links, save PDF in another folder, boxy stats?
