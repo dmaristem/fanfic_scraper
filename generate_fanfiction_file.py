@@ -273,7 +273,6 @@ def get_profile(url: str) -> Dict:
         title = profile.find("b").get_text()
         author = profile.find("a").get_text()
         author_link = "https://www.fanfiction.net/" + profile.find("a").get('href')
-        print(author_link)
         summary = profile.find("div", attrs={"class": "xcontrast_txt"}).get_text()
         fandom = html.find("span", attrs={"class": "lc-left"}).find_all("a")[1].get_text()
         rating = profile.find("span", attrs={"class": "xgray"}).find("a").get_text()
@@ -405,14 +404,14 @@ def generate_pdf(url: str) -> None:
     Story.append(Spacer(1, 12))
     Story.append(Spacer(1, 12))
     # Add fanfic summary
-    Story.append(Paragraph("<i>Summary:</i>", style=style))
+    Story.append(Paragraph("<b>Summary</b>", style=style))
     Story.append(Spacer(1, 12))
     Story.append(Paragraph(profile_dict['summary'], style=style))
     Story.append(Spacer(1, 12))
     Story.append(Spacer(1, 12))
     Story.append(Spacer(1, 12))
     # <hr> line equivalent
-    d = Drawing(100, 1) # parameters?
+    d = Drawing(100, 0.5) # parameters?
     d.add(Line(0, 20, 455, 20)) # (x1, y1, x2, y2)
     Story.append(d)
 
@@ -451,8 +450,9 @@ def generate_pdf(url: str) -> None:
 
 
 if __name__ == '__main__':
-    generate_pdf("https://www.fanfiction.net/s/10079742/1/The-Shepard")
+    # generate_pdf("https://www.fanfiction.net/s/12783369/1/Triptych")
+    generate_pdf("https://www.fanfiction.net/s/11071969/1/A-Casket-Full-of-Victory")
 
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links, boxy stats?
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links, boxy stats, same-date update no year issue
