@@ -317,9 +317,9 @@ def get_profile(url: str) -> Dict:
 
         # a string containing rating, genre, characters, words, status, and more ...
         stats = profile.find("span", attrs={"class": "xgray"}).get_text()
-        print(stats)
+        # print(stats)
         stats_split = stats.split(" - ")
-        print(stats_split)
+        # print(stats_split)
         for i in range(len(stats_split)):
             stats_split[i] = stats_split[i].lstrip()
 
@@ -337,20 +337,20 @@ def get_profile(url: str) -> Dict:
                 genre = stats_split[2]
                 if "Chapters:" in stats_split[3]:
                     characters = ''
-                    chapters = stats_split[3]
+                    chapters = stats_split[3].split(":")[1].strip()
                     words_split = stats_split[4].split(":")
                 else:
                     characters = stats_split[3]
-                    chapters = stats_split[4]
+                    chapters = stats_split[4].split(":")[1].strip()
                     words_split = stats_split[5].split(":")
             else: # genre doesn't exist
                 if "Chapters:" in stats_split[2]:
                     characters = ''
-                    chapters = stats_split[2]
+                    chapters = stats_split[2].split(":")[1].strip()
                     words_split = stats_split[3].split(":")
                 else:
                     characters = stats_split[2]
-                    chapters = stats_split[3]
+                    chapters = stats_split[3].split(":")[1].strip()
                     words_split = stats_split[4].split(":")
                 genre = ''
         else: # single chapter fic; "Chapters' profile key DNE
@@ -443,7 +443,7 @@ def get_profile(url: str) -> Dict:
                         'status': status,
                         'author_link': author_link
                         }
-        print(profile_dict)
+        # print(profile_dict)
         return profile_dict
 
     else:
@@ -548,10 +548,13 @@ def generate_pdf(url: str) -> None:
     # Add in fanfic stats
     Story.append(Paragraph("<strong>Rating: </strong>" + profile_dict['rating'], style=style))
     Story.append(Paragraph("<strong>Fandom: </strong>"+ profile_dict['fandom'], style=style))
-    Story.append(Paragraph("<strong>Genre: </strong>" + profile_dict['genre'], style=style))
-    Story.append(Paragraph("<strong>Characters: </strong>" + profile_dict['characters'], style=style))
+    if profile_dict["genre"]:
+        Story.append(Paragraph("<strong>Genre: </strong>" + profile_dict['genre'], style=style))
+    if profile_dict["characters"]:
+        Story.append(Paragraph("<strong>Characters: </strong>" + profile_dict['characters'], style=style))
     Story.append(Paragraph("<strong>Words: </strong>" + profile_dict['words'], style=style))
-    Story.append(Paragraph("<strong>Chapters: </strong>" + profile_dict['chapters'], style=style))
+    if profile_dict["chapters"]:
+        Story.append(Paragraph("<strong>Chapters: </strong>" + profile_dict['chapters'], style=style))
     Story.append(Paragraph("<strong>Published on: </strong>" + profile_dict['publication_date'], style=style))
     if profile_dict["updated_date"]:
         Story.append(Paragraph("<strong>Updated on: </strong>" + profile_dict['updated_date'], style=style))
@@ -581,7 +584,7 @@ if __name__ == '__main__':
     # generate_pdf("https://www.fanfiction.net/s/12783369/1/Triptych")
     # generate_pdf("https://www.fanfiction.net/s/11528330/1/Klepto")
     # generate_pdf("https://www.fanfiction.net/s/3227921/1/Knockout")
-    # generate_pdf("https://www.fanfiction.net/s/3501089/1/The-Burning-of-Angels") #No characters!!!
+    generate_pdf("https://www.fanfiction.net/s/3501089/1/The-Burning-of-Angels") #No characters!!!
     # get_profile("https://www.fanfiction.net/s/3501089/1/The-Burning-of-Angels")
     # generate_pdf("https://www.fanfiction.net/s/11228999/2/Fargo") # Japanese characters
     # generate_pdf("https://www.fanfiction.net/s/5131507/1/The-Squire")
