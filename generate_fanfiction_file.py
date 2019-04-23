@@ -245,13 +245,41 @@ def get_text(url: str)-> List:
         for paragraph in html.select('p'):
             # lst_p.append(paragraph.get_text()) # works, but doesn't preserve italics and bolded text
             stringify_replace = str(paragraph).replace("<p>", "", 1).replace("</p>", "", 1).\
-                replace('<span style="text-decoration:underline;">', "").replace("</span>", "")
+                replace('<span style="text-decoration:underline;">', "").\
+                replace('<span style="text-decoration: underline;">', "").replace("</span>", "").\
+                replace('<p align="center">', "")
             lst_p.append(stringify_replace)
     else:
         #Raise an exception if we failed to get any data from the url
         raise Exception('Error retrieving contents at {}'.format(url))
     # print(lst_p)
     return lst_p
+
+
+# def get_genre() -> List:
+#     """
+#     Return a list of all possible genres listed in fanfiction.net for a fanfic.
+#     From an arbitrary URL of a fanfiction page where a selection of all genres are listed.
+#     """
+#     url = "https://www.fanfiction.net/community/The-XX-Collective-Strong-Intelligent-Kickass-Women-in-Fanfiction/125666/"
+#     response = simple_get(url)
+#     if response is not None:
+#         html = BeautifulSoup(response, 'html.parser')
+#         genres = html.find("select", attrs={"name": "genreid"})
+#         lst_genres = genres.find('option').get_text('||').split('||')
+#         del lst_genres[0]
+#         # lst_genres = [genre.text for genre in genres.find('option')] # AttributeError: 'NavigableString' object has no attribute 'text'
+#     print(lst_genres)
+#     return lst_genres
+#     test = 'Chapters: 6'
+#     if '6' in test:
+#         print('true')
+#     else:
+#         print('false')
+#       if 'Romance' in 'Romance/Adventure':
+#           print('true')
+#       else:
+#           print('false')
 
 
 def get_profile(url: str) -> Dict:
@@ -289,23 +317,112 @@ def get_profile(url: str) -> Dict:
 
         # a string containing rating, genre, characters, words, status, and more ...
         stats = profile.find("span", attrs={"class": "xgray"}).get_text()
+        print(stats)
         stats_split = stats.split(" - ")
+        print(stats_split)
         for i in range(len(stats_split)):
             stats_split[i] = stats_split[i].lstrip()
 
-        genre = stats_split[2]
-        characters = stats_split[3]
+        # check for existence of certain profile keys i.e. genre, characters, chapters, and status
+        genres = ['Adventure', 'Angst', 'Crime', 'Drama', 'Family', 'Fantasy', 'Friendship', 'General', 'Horror',
+                  'Humor',
+                  'Hurt/Comfort', 'Mystery', 'Parody', 'Poetry', 'Romance', 'Sci-Fi', 'Spiritual', 'Supernatural',
+                  'Suspense',
+                  'Tragedy', 'Western']
+
         # Checking to see if the fanfic is one-chapter or more
         option_tags = html.find("select")
-        if option_tags is not None: # multi-chapter fic
-            chapters_split = stats_split[4].split(":") # split() bc I only need the number --- 'Chapters: number"
-            chapters = chapters_split[1].strip()
-            words_split = stats_split[5].split(":")
-        else:
-            chapters = "1"
-            words_split = stats_split[4].split(":")
+        if option_tags is not None:  # multi-chapter fic; profile key 'Chapters' exist
+            if stats_split[2].split("/")[0] in genres:
+                genre = stats_split[2]
+                if "Chapters:" in stats_split[3]:
+                    characters = ''
+                    chapters = stats_split[3]
+                    words_split = stats_split[4].split(":")
+                else:
+                    characters = stats_split[3]
+                    chapters = stats_split[4]
+                    words_split = stats_split[5].split(":")
+            else: # genre doesn't exist
+                if "Chapters:" in stats_split[2]:
+                    characters = ''
+                    chapters = stats_split[2]
+                    words_split = stats_split[3].split(":")
+                else:
+                    characters = stats_split[2]
+                    chapters = stats_split[3]
+                    words_split = stats_split[4].split(":")
+                genre = ''
+        else: # single chapter fic; "Chapters' profile key DNE
+            if stats_split[2].split("/")[0] in genres:
+                genre = stats_split[2]
+                chapters = "1"
+                if "Words:" in stats_split[3]:
+                    characters = ''
+                    words_split = stats_split[3].split(":")
+                else:
+                    characters = stats_split[3]
+                    words_split = stats_split[4].split(":")
+            else:
+                if "Words:" in stats_split[2]:
+                    characters = ''
+                    words_split = stats_split[2].split(":")
+                else:
+                    characters = stats_split[2]
+                    words_split = stats_split[3].split(":")
         words = words_split[1]
-        print(stats_split)
+
+            # for i, s in enumerate(stats_split):
+            #     if 'Chapters:' in s:
+            #         # print(i)
+            #         chapters_split = stats_split[i].split(
+            #             ":")  # split() bc I only need the number --- 'Chapters: number"
+            #         chapters = chapters_split[1].strip()
+            #         words_split = stats_split[i + 1].split(":")
+            #         for g in genres:
+            #
+            #             if g in stats_split[i-2]:
+            #                 print(stats_split[i-2])
+            #                 genre = stats_split[i-2]
+            #                 characters = stats_split[i-1]
+            #                 break
+            #             elif g in stats_split[i-1]:
+            #                 genre = stats_split[i-1]
+            #                 characters = ''
+            #                 break
+            #             elif stats_split[i-1] == stats_split[1]:
+            #                 characters = ''
+            #                 genre = ''
+            #                 break
+                        # elif stats_split[i-1] != stats_split[1]:
+                        #     print('aahha')
+                        #     characters = stats_split[i-1]
+                        #     genre = ''
+                        #     break
+        # else: # profile key 'Chapters' doesn't exist
+        #     chapters = "1"
+        #     for g in genres:
+        #         if g in stats_split[2]:
+        #             genre = stats_split[2]
+        #             if "Words:" in stats_split[3]:
+        #                 words_split = stats_split[3].split(":")
+        #                 characters = ''
+        #             else:
+        #                 characters = stats_split[3]
+        #                 words_split = stats_split[4].split(":")
+        #             break
+        #         else:
+        #             genre = ''
+        #             if "Words:" in stats_split[2]:
+        #                 words_split = stats_split[2].split(":")
+        #                 characters = ''
+        #             else:
+        #                 print('why')
+        #                 characters = stats_split[2]
+        #                 words_split = stats_split[3].split(":")
+        #             break
+        # words = words_split[1]
+
         if "Status: Complete" in stats_split:
             status = "Complete"
         else:
@@ -326,6 +443,7 @@ def get_profile(url: str) -> Dict:
                         'status': status,
                         'author_link': author_link
                         }
+        print(profile_dict)
         return profile_dict
 
     else:
@@ -463,9 +581,19 @@ if __name__ == '__main__':
     # generate_pdf("https://www.fanfiction.net/s/12783369/1/Triptych")
     # generate_pdf("https://www.fanfiction.net/s/11528330/1/Klepto")
     # generate_pdf("https://www.fanfiction.net/s/3227921/1/Knockout")
-    # generate_pdf("https://www.fanfiction.net/s/3501089/1/The-Burning-of-Angels") No characters!!!
+    # generate_pdf("https://www.fanfiction.net/s/3501089/1/The-Burning-of-Angels") #No characters!!!
+    # get_profile("https://www.fanfiction.net/s/3501089/1/The-Burning-of-Angels")
     # generate_pdf("https://www.fanfiction.net/s/11228999/2/Fargo") # Japanese characters
-    generate_pdf("https://www.fanfiction.net/s/5131507/1/The-Squire")
+    # generate_pdf("https://www.fanfiction.net/s/5131507/1/The-Squire")
+    # generate_pdf("https://www.fictionpress.com/s/2000171/1/Hiring-a-Hooligan") # <p style= ...>, spacing btwn paragraph issues
+    # ^ spacing issues seems to be a fictionpress issue
+    # generate_pdf("https://www.fanfiction.net/s/12696884/1/Slant")
+    # get_profile("https://www.fanfiction.net/s/5881486/1/A-Song-for-Alingon")
+    # get_text("https://www.fanfiction.net/s/7384510/1/Not-What-She-Expected")
+    # get_genre()
+    # get_profile("https://www.fanfiction.net/s/10115523/1/A-Curious-Anomaly") # Crossover Fandom!
+    get_profile("https://www.fanfiction.net/s/2711713/1/Soap-Bubbles")
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links, boxy stats, new proile extraction method, japanese characters, understand split() better
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links, deal with crossover fandom
+# boxy stats, new profile extraction method, new <p></p> tag removal method, japanese characters, understand split() better
