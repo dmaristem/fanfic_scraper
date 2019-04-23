@@ -303,7 +303,7 @@ def get_profile(url: str) -> Dict:
         author = profile.find("a").get_text()
         author_link = "https://www.fanfiction.net/" + profile.find("a").get('href')
         summary = profile.find("div", attrs={"class": "xcontrast_txt"}).get_text()
-        fandom = html.find("span", attrs={"class": "lc-left"}).find_all("a")[1].get_text()
+        fandom = html.find("span", attrs={"class": "lc-left"}).find_all("a")[-1].get_text()
         # Stats
         rating = profile.find("span", attrs={"class": "xgray"}).find("a").get_text()
         lst_dates = profile.find("span", attrs={"class": "xgray"}).find_all("span")
@@ -592,8 +592,8 @@ if __name__ == '__main__':
     # get_text("https://www.fanfiction.net/s/7384510/1/Not-What-She-Expected")
     # get_genre()
     # get_profile("https://www.fanfiction.net/s/10115523/1/A-Curious-Anomaly") # Crossover Fandom!
-    get_profile("https://www.fanfiction.net/s/2711713/1/Soap-Bubbles")
+    # get_profile("https://www.fanfiction.net/s/2711713/1/Soap-Bubbles")
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links, deal with crossover fandom
+#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links,
 # boxy stats, new profile extraction method, new <p></p> tag removal method, japanese characters, understand split() better
