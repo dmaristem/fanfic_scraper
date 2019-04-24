@@ -14,6 +14,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.lib.fonts import addMapping
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.shapes import Drawing, Line
+import sys
+sys.setrecursionlimit(3000)
 
 # Download web pages to get the raw HTML, with the help of the requests package
 def simple_get(url:str):
@@ -216,7 +218,7 @@ def generate_txt(url: str)-> None:
 #     # print(text)
 #     return text
 
-# each time get_text() is called, it returns all the text as a single string from the given URL
+#each time get_text() is called, it returns all the text as a single string from the given URL
 # def get_text(url: str)-> str:
 #     """
 #     Downloads the fanfiction page(s) and returns a string of the entire text of the chapter(s).
@@ -234,26 +236,96 @@ def generate_txt(url: str)-> None:
 #     return text
 
 
+#Previous current function in use
+# def get_text(url: str)-> List:
+#     """
+#     Downloads the fanfiction page and returns a list of all the paragraphs in a chapter.
+#     """
+#     lst_p = []
+#     response = simple_get(url)
+#     if response is not None:
+#         html = BeautifulSoup(response, 'html.parser')
+#         for paragraph in html.select('p'):
+#             # lst_p.append(paragraph.get_text()) # works, but doesn't preserve italics and bolded text
+#             stringify_replace = str(paragraph).replace("<p>", "", 1).replace("</p>", "", 1).\
+#                 replace('<span style="text-decoration:underline;">', "").\
+#                 replace('<span style="text-decoration: underline;">', "").replace("</span>", "").\
+#                 replace('<p align="center">', "")
+#             lst_p.append(stringify_replace)
+#     else:
+#         #Raise an exception if we failed to get any data from the url
+#         raise Exception('Error retrieving contents at {}'.format(url))
+#     # print(lst_p)
+#     return lst_p
+
+
 def get_text(url: str)-> List:
     """
     Downloads the fanfiction page and returns a list of all the paragraphs in a chapter.
     """
-    lst_p = []
+    lst_text = []
     response = simple_get(url)
     if response is not None:
         html = BeautifulSoup(response, 'html.parser')
-        for paragraph in html.select('p'):
-            # lst_p.append(paragraph.get_text()) # works, but doesn't preserve italics and bolded text
-            stringify_replace = str(paragraph).replace("<p>", "", 1).replace("</p>", "", 1).\
-                replace('<span style="text-decoration:underline;">', "").\
-                replace('<span style="text-decoration: underline;">', "").replace("</span>", "").\
-                replace('<p align="center">', "")
-            lst_p.append(stringify_replace)
+        story = html.find("div", attrs={"id": "storytext"})
+        # print(story)
+        if story is None:
+            story = html.find("div", attrs={"id": "storycontent"})
+        # if story.find("p") is not None:
+        # if '<p>' or '</p>' in story:
+        #     print('p tag exists') # should not print for Tales of the House of the Moon, but it did.
+        # print(story.get_text())
+
+            # for paragraph in story.find_all('p'):
+            # for paragraph in html.select("p"):
+        for line in story:
+            # print(line)
+            if line.name == 'p':
+                stringify_replace = str(line).replace("<p>", "").replace("</p>", "").\
+                    replace('<p align="center">', "").replace('<p align="center;">', "").\
+                    replace('<p style="text-align:center;">', "").\
+                    replace('<span style="text-decoration:underline;">', "").\
+                    replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>")
+                lst_text.append(stringify_replace)
+                # print(stringify_replace)
+
+                # print(stringify_replace)
+            # if line.find("span") is not None:
+            #     stringify_replace = stringify_replace.replace('<span style="text-decoration:underline;">', "").\
+            #         replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>")
+            else:
+                if str(line) != '\n':
+                    stringify_replace = str(line).replace("<br>", "").replace("</br>", "").replace("<br/>", "")\
+                        .replace("<center>", "").replace("</center>", "").replace("<br>", ""). \
+                        replace("</br>", "").strip()
+                    # .replace("\\r\\n", "").replace("\\n", "").replace("\n", "").replace("\\r", "").\
+                    # replace("\r", "").replace("\r\n", "")
+                    lst_text.append(stringify_replace)
+                    # print(stringify_replace)
+                # print(id(lst_text))
+        # else:
+        #     for line in story:
+        #         stringify_replace = str(line).replace("<center>", "").replace("</center>", "").replace("<br>", "").\
+        #             replace("</br>", "").replace("\\r\\n", "").replace("\\n", "").replace("<br>", "").replace("</br>", "").replace("<br/>", "")
+                # print(stringify_replace)
+                # lst_text.append(stringify_replace)
+        # for paragraph in html.select('p'):
+        #     # lst_p.append(paragraph.get_text()) # works, but doesn't preserve italics and bolded text
+        #     stringify_replace = str(paragraph).replace("<p>", "", 1).replace("</p>", "", 1).\
+        #         replace('<span style="text-decoration:underline;">', "").\
+        #         replace('<span style="text-decoration: underline;">', "").replace("</span>", "").\
+        #         replace('<p align="center">', "")
+        #     lst_p.append(stringify_replace)
     else:
         #Raise an exception if we failed to get any data from the url
         raise Exception('Error retrieving contents at {}'.format(url))
-    # print(lst_p)
-    return lst_p
+    # print(list(filter(None, lst_text)))
+    # print(lst_text)
+    # print(id(lst_text))
+    lst_text = list(filter(None, lst_text))
+    # print(id(lst_text))
+    # print(lst_text)
+    return lst_text # shouldn't this return be in the if branch?
 
 
 # def get_genre() -> List:
@@ -581,22 +653,19 @@ def generate_pdf(url: str) -> None:
 
 
 if __name__ == '__main__':
-    # generate_pdf("https://www.fanfiction.net/s/12783369/1/Triptych")
-    # generate_pdf("https://www.fanfiction.net/s/11528330/1/Klepto")
-    # generate_pdf("https://www.fanfiction.net/s/3227921/1/Knockout")
-    generate_pdf("https://www.fanfiction.net/s/3501089/1/The-Burning-of-Angels") #No characters!!!
-    # get_profile("https://www.fanfiction.net/s/3501089/1/The-Burning-of-Angels")
-    # generate_pdf("https://www.fanfiction.net/s/11228999/2/Fargo") # Japanese characters
-    # generate_pdf("https://www.fanfiction.net/s/5131507/1/The-Squire")
-    # generate_pdf("https://www.fictionpress.com/s/2000171/1/Hiring-a-Hooligan") # <p style= ...>, spacing btwn paragraph issues
-    # ^ spacing issues seems to be a fictionpress issue
-    # generate_pdf("https://www.fanfiction.net/s/12696884/1/Slant")
-    # get_profile("https://www.fanfiction.net/s/5881486/1/A-Song-for-Alingon")
-    # get_text("https://www.fanfiction.net/s/7384510/1/Not-What-She-Expected")
-    # get_genre()
-    # get_profile("https://www.fanfiction.net/s/10115523/1/A-Curious-Anomaly") # Crossover Fandom!
-    # get_profile("https://www.fanfiction.net/s/2711713/1/Soap-Bubbles")
-
+   # generate_pdf("https://www.fanfiction.net/s/1638751/1/Tales-From-the-House-of-the-Moon") # No <p> tags wtf; RecursionError: maximum recursion depth exceeded in comparison
+   # get_text("https://www.fanfiction.net/s/1638751/18/Tales-From-the-House-of-the-Moon")
+   # generate_pdf("https://www.fanfiction.net/s/6379811/1/The-Fourth-King")
+   # get_text("https://m.fanfiction.net/s/360519/1/Chimera")
+   #  get_text("https://m.fanfiction.net/s/3504281/1/Sky-on-Fire-I-Slow-Burn")
+   # get_text("https://www.fanfiction.net/s/11456734/1/Problem-Nine-And-Two")
+   # generate_pdf("https://www.fanfiction.net/s/11456734/1/Problem-Nine-And-Two")
+   # get_text("https://www.fanfiction.net/s/1638751/2/Tales-From-the-House-of-the-Moon")
+   # generate_pdf("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
+   # get_text("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
 
 #TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links,
-# boxy stats, new profile extraction method, new <p></p> tag removal method, japanese characters, understand split() better
+# boxy stats, new <p></p> tag removal method, japanese characters, understand split() better, optimize, brave girl coming home repition of text, extra page at the end Brave girl ..., div with no p tags, div with p tags,
+# tales from the house of the moon - chapter 18, 21 -- for line in story, line is acting like a nested paragraph. So all paragraphs are appended at once. UGHHH
+# I don't preserver centering of origianl text
+# ReportLab doesn't support <center> and <br> tags (and \r\n or \n ?) it does support \r and \n
