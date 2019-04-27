@@ -266,7 +266,7 @@ def get_text(url: str)-> List:
     lst_text = []
     response = simple_get(url)
     if response is not None:
-        html = BeautifulSoup(response, 'html.parser')
+        html = BeautifulSoup(response, 'lxml')
         story = html.find("div", attrs={"id": "storytext"})
         # print(story)
         if story is None:
@@ -275,17 +275,18 @@ def get_text(url: str)-> List:
         # if '<p>' or '</p>' in story:
         #     print('p tag exists') # should not print for Tales of the House of the Moon, but it did.
         # print(story.get_text())
-
+        # print(story)
             # for paragraph in story.find_all('p'):
             # for paragraph in html.select("p"):
         for line in story:
-            # print(line)
+            # print(story)
             if line.name == 'p':
-                stringify_replace = str(line).replace("<p>", "").replace("</p>", "").\
-                    replace('<p align="center">', "").replace('<p align="center;">', "").\
-                    replace('<p style="text-align:center;">', "").\
-                    replace('<span style="text-decoration:underline;">', "").\
+                stringify_replace = str(line).replace('<span style="text-decoration:underline;">', "<u>").\
                     replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>")
+                    # .replace("<p>", "").replace("</p>", "").\
+                    # replace('<p align="center">', "").replace('<p align="center;">', "").\
+                    # replace('<p style="text-align:center;">', "").\
+
                 lst_text.append(stringify_replace)
                 # print(stringify_replace)
 
@@ -295,11 +296,7 @@ def get_text(url: str)-> List:
             #         replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>")
             else:
                 if str(line) != '\n':
-                    stringify_replace = str(line).replace("<br>", "").replace("</br>", "").replace("<br/>", "")\
-                        .replace("<center>", "").replace("</center>", "").replace("<br>", ""). \
-                        replace("</br>", "").strip()
-                    # .replace("\\r\\n", "").replace("\\n", "").replace("\n", "").replace("\\r", "").\
-                    # replace("\r", "").replace("\r\n", "")
+                    stringify_replace = str(line).replace('<br/>', "").strip()
                     lst_text.append(stringify_replace)
                     # print(stringify_replace)
                 # print(id(lst_text))
@@ -324,7 +321,7 @@ def get_text(url: str)-> List:
     # print(id(lst_text))
     lst_text = list(filter(None, lst_text))
     # print(id(lst_text))
-    # print(lst_text)
+    print(lst_text)
     return lst_text # shouldn't this return be in the if branch?
 
 
@@ -426,9 +423,9 @@ def get_profile(url: str) -> Dict:
                     words_split = stats_split[4].split(":")
                 genre = ''
         else: # single chapter fic; "Chapters' profile key DNE
+            chapters = "1"
             if stats_split[2].split("/")[0] in genres:
                 genre = stats_split[2]
-                chapters = "1"
                 if "Words:" in stats_split[3]:
                     characters = ''
                     words_split = stats_split[3].split(":")
@@ -442,6 +439,7 @@ def get_profile(url: str) -> Dict:
                 else:
                     characters = stats_split[2]
                     words_split = stats_split[3].split(":")
+                genre = ''
         words = words_split[1]
 
             # for i, s in enumerate(stats_split):
@@ -654,7 +652,7 @@ def generate_pdf(url: str) -> None:
 
 if __name__ == '__main__':
    # generate_pdf("https://www.fanfiction.net/s/1638751/1/Tales-From-the-House-of-the-Moon") # No <p> tags wtf; RecursionError: maximum recursion depth exceeded in comparison
-   # get_text("https://www.fanfiction.net/s/1638751/18/Tales-From-the-House-of-the-Moon")
+   # get_text("https://www.fanfiction.net/s/1638751/21/Tales-From-the-House-of-the-Moon")
    # generate_pdf("https://www.fanfiction.net/s/6379811/1/The-Fourth-King")
    # get_text("https://m.fanfiction.net/s/360519/1/Chimera")
    #  get_text("https://m.fanfiction.net/s/3504281/1/Sky-on-Fire-I-Slow-Burn")
@@ -667,5 +665,5 @@ if __name__ == '__main__':
 #TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links,
 # boxy stats, new <p></p> tag removal method, japanese characters, understand split() better, optimize, brave girl coming home repition of text, extra page at the end Brave girl ..., div with no p tags, div with p tags,
 # tales from the house of the moon - chapter 18, 21 -- for line in story, line is acting like a nested paragraph. So all paragraphs are appended at once. UGHHH
-# I don't preserver centering of origianl text
-# ReportLab doesn't support <center> and <br> tags (and \r\n or \n ?) it does support \r and \n
+# ReportLab supports all <i>, <em>, <strong>, <b>, and <u>. All other tags, even nonsensical ones, it does not show. i.e. <p> shows up as nothing. ''
+# <center><strong><em> ... <p> ... </p> I didn't account for nested <p> tags

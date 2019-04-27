@@ -1,3 +1,5 @@
 
 *.pdf
 generate_fanfiction_file_get_profile_mess.py
+test_generate_fanfic.py
+testing_one_chapter.py
