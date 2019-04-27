@@ -279,24 +279,26 @@ def get_text(url: str)-> List:
             # for paragraph in story.find_all('p'):
             # for paragraph in html.select("p"):
         for line in story:
-            # print(story)
             if line.name == 'p':
                 stringify_replace = str(line).replace('<span style="text-decoration:underline;">', "<u>").\
-                    replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>")
+                    replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>").\
+                    replace("\xa0", "")
                     # .replace("<p>", "").replace("</p>", "").\
                     # replace('<p align="center">', "").replace('<p align="center;">', "").\
                     # replace('<p style="text-align:center;">', "").\
-
                 lst_text.append(stringify_replace)
                 # print(stringify_replace)
-
-                # print(stringify_replace)
-            # if line.find("span") is not None:
-            #     stringify_replace = stringify_replace.replace('<span style="text-decoration:underline;">', "").\
-            #         replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>")
+            elif line.name == 'div':
+                for child in line.descendants:
+                    if child.name == 'p':
+                        stringify_replace = str(child).replace('<span style="text-decoration:underline;">', "<u>"). \
+                            replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>"). \
+                            replace("\xa0", "")
+                        # print(stringify_replace)
+                        lst_text.append(stringify_replace)
             else:
                 if str(line) != '\n':
-                    stringify_replace = str(line).replace('<br/>', "").strip()
+                    stringify_replace = str(line).replace('<br/>', "").replace("\xa0", "").strip()
                     lst_text.append(stringify_replace)
                     # print(stringify_replace)
                 # print(id(lst_text))
@@ -321,7 +323,7 @@ def get_text(url: str)-> List:
     # print(id(lst_text))
     lst_text = list(filter(None, lst_text))
     # print(id(lst_text))
-    print(lst_text)
+    # print(lst_text)
     return lst_text # shouldn't this return be in the if branch?
 
 
@@ -643,7 +645,8 @@ def generate_pdf(url: str) -> None:
         for paragraph in lst_paragraphs:
             Story.append(Paragraph(paragraph, style=style))
             Story.append(Spacer(1, 12))
-        Story.append(PageBreak())
+        if len(lst_chap_links) - 1 != i:
+            Story.append(PageBreak())
         # Story.append(Paragraph(str(i), style=style))
 
     Story.append(Spacer(1, 12))
@@ -661,6 +664,9 @@ if __name__ == '__main__':
    # get_text("https://www.fanfiction.net/s/1638751/2/Tales-From-the-House-of-the-Moon")
    # generate_pdf("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
    # get_text("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
+   #  get_text("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
+   generate_pdf("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
+
 
 #TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links,
 # boxy stats, new <p></p> tag removal method, japanese characters, understand split() better, optimize, brave girl coming home repition of text, extra page at the end Brave girl ..., div with no p tags, div with p tags,
