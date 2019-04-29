@@ -68,18 +68,12 @@ def get_num_of_chapters(url: str) -> int:
 
     if response is not None:
         html = BeautifulSoup(response, 'html.parser')
-        # option_tags = html.select("option")  # research select vs. find vs. find_all; find returns the first occurrence
         option_tags = html.find("select")
-        # print(option_tags)
         if option_tags is not None: #multi-chapter situation
             values = [o.get('value') for o in option_tags.find_all("option")] # AttributeError: 'NoneType' object has no attribute 'find_all'; create a check for html.find("select") first. What does find() return?
             return int(values[-1])
         else: #one-chapter situation
             return 1
-
-        # unique_values = list(OrderedDict.fromkeys(values))  # a soln to the duplicate items in list issue. alternatively: select the first occurrence of option
-
-
     else:
         #Raise an exception if we failed to get any data from the url
         raise Exception('Error retrieving contents at {}'.format(url))
@@ -120,7 +114,6 @@ def get_title(url: str) -> str:
     first_slice = url.rsplit('/', 1)
     title = first_slice[1]
     normal_title = title.replace('-', ' ')
-    # print(normal_title)
     return normal_title
 
 def get_chap_name(url: str) -> List:
@@ -133,41 +126,12 @@ def get_chap_name(url: str) -> List:
 
     if response is not None:
         html = BeautifulSoup(response, 'html.parser')
-        # option_tags = html.select_one("select")
-
         option_tags = html.find("select", attrs={"id": "chap_select"})
-        # chap_names = [o.text for o in option_tags.find_all("option")]
-
-        # for option in option_tags.find_all("option"):
-        #     print(option.get_text())
-        #     print(option.next_sibling)
-        # for option in option_tags.find("option"):
         if option_tags is not None: # multi-chapter situation
             for option in option_tags:
-                # iteration += 1
-                # if iteration == 3:
-                #     return
-                # print(option_tags)
-                # l.append(option.get_text(' '))
                 text = option.get_text('|||') # ||| as a unique marker to later split by
                 lst_chap_names = text.split('|||')
-                # print(lst_chap_names)
                 return lst_chap_names
-                # print(option)
-                # print(option.get_text(' '))
-
-        # option_lst = [print(option) for option in option_tags]
-        # unique_option_tags = list(OrderedDict.fromkeys(option_tags))
-
-        # chap_names = [o.text for o in unique_option_tags]
-
-        # for o in option_tags:
-        #     print(option_tags)
-        #     print(o)
-        #     print(o.text)
-
-        # unique_chap_names = list(OrderedDict.fromkeys(chap_names))
-
         else: # one-chapter situation
             return []
     else:
@@ -180,88 +144,8 @@ def get_chap_name(url: str) -> List:
 # The object includes a lot of methods to select, view, and manipulatethe DOM nodes and text content
 #Extract the textual content of a chapter:
 
-
-def generate_txt(url: str)-> None:
-    """
-    Downloads the fanfiction page(s) and save it as a .txt file.
-    """
-    lst_links = generate_links(url)
-    title = get_title(url)
-    f = open(title + ".txt", 'w+', encoding='utf-8')
-    for link in lst_links:
-        response = simple_get(link)
-        if response is not None:
-            html = BeautifulSoup(response, 'html.parser')
-            for paragraph in html.select('p'): 
-                f.write(paragraph.get_text() + '\r\n')
-        else:
-            #Raise an exception if we failed to get any data from the url
-            raise Exception('Error retrieving contents at {}'.format(url))
-    f.close()
-
-# all chapter links were generated inside the get_text function
-# def get_text(url: str)-> str:
-#     """
-#     Downloads the fanfiction page(s) and returns a string of the entire text of the chapter(s).
-#     """
-#     lst_links = generate_links(url)
-#     text = ''
-#     for link in lst_links:
-#         response = simple_get(link)
-#         if response is not None:
-#             html = BeautifulSoup(response, 'html.parser')
-#             for paragraph in html.select('p'):
-#                 text += paragraph.get_text() + '\n'
-#         else:
-#             #Raise an exception if we failed to get any data from the url
-#             raise Exception('Error retrieving contents at {}'.format(url))
-#     # print(text)
-#     return text
-
-#each time get_text() is called, it returns all the text as a single string from the given URL
-# def get_text(url: str)-> str:
-#     """
-#     Downloads the fanfiction page(s) and returns a string of the entire text of the chapter(s).
-#     """
-#     text = ''
-#     response = simple_get(url)
-#     if response is not None:
-#         html = BeautifulSoup(response, 'html.parser')
-#         for paragraph in html.select('p'):
-#             text += paragraph.get_text() + '\n'
-#     else:
-#         #Raise an exception if we failed to get any data from the url
-#         raise Exception('Error retrieving contents at {}'.format(url))
-#     # print(text)
-#     return text
-
-
-#Previous current function in use
-# def get_text(url: str)-> List:
-#     """
-#     Downloads the fanfiction page and returns a list of all the paragraphs in a chapter.
-#     """
-#     lst_p = []
-#     response = simple_get(url)
-#     if response is not None:
-#         html = BeautifulSoup(response, 'html.parser')
-#         for paragraph in html.select('p'):
-#             # lst_p.append(paragraph.get_text()) # works, but doesn't preserve italics and bolded text
-#             stringify_replace = str(paragraph).replace("<p>", "", 1).replace("</p>", "", 1).\
-#                 replace('<span style="text-decoration:underline;">', "").\
-#                 replace('<span style="text-decoration: underline;">', "").replace("</span>", "").\
-#                 replace('<p align="center">', "")
-#             lst_p.append(stringify_replace)
-#     else:
-#         #Raise an exception if we failed to get any data from the url
-#         raise Exception('Error retrieving contents at {}'.format(url))
-#     # print(lst_p)
-#     return lst_p
-
-
 def get_text_r_helper(line: BeautifulSoup) -> Any:
         if isinstance(line, Tag) and line.name == 'p' or line.name == 'em' or line.name == 'strong':
-            # print(type(line))
             stringify_replace = str(line).replace('<span style="text-decoration:underline;">', "<u>"). \
                 replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>"). \
                 replace("\xa0", "").replace("<p></p>", "").replace('<br/>', "")
@@ -272,8 +156,6 @@ def get_text_r_helper(line: BeautifulSoup) -> Any:
         else: # line.name == 'div'
             lst_text = []
             for l in line:
-                # print(type(l))
-                # print(l)
                 temp = get_text_r_helper(l)
                 if isinstance(temp, list):
                     lst_text.extend(temp)
@@ -290,125 +172,54 @@ def get_text_r(url: str) -> List:
         story = html.find("div", attrs={"id": "storytext"})
         if story is None:
             story = html.find("div", attrs={"id": "storycontext"})
-        # print(story.prettify())
-        # return
-        # i = 0
         for line in story:
-            # print(type(line), line)
             temp = get_text_r_helper(line)
             if isinstance(temp, list):
                 lst_text.extend(temp)
             else:
                 lst_text.append(temp)
-            # i += 1
-            # if i == 112:
-            #     lst_text = list(filter(None, lst_text))
-            #     print(lst_text)
-            #     return lst_text
     else:
         #Raise an exception if we failed to get any data from the url
         raise Exception('Error retrieving contents at {}'.format(url))
     lst_text = list(filter(None, lst_text))
-    print(lst_text)
     return lst_text
 
 
-
-
-
-
-def get_text(url: str)-> List:
-    """
-    Downloads the fanfiction page and returns a list of all the paragraphs in a chapter.
-    """
-    lst_text = []
-    response = simple_get(url)
-    if response is not None:
-        html = BeautifulSoup(response, 'lxml')
-        story = html.find("div", attrs={"id": "storytext"})
-        # print(story)
-        if story is None:
-            story = html.find("div", attrs={"id": "storycontent"})
-        # if story.find("p") is not None:
-        # if '<p>' or '</p>' in story:
-        #     print('p tag exists') # should not print for Tales of the House of the Moon, but it did.
-        # print(story.get_text())
-        # print(story)
-            # for paragraph in story.find_all('p'):
-            # for paragraph in html.select("p"):
-        for line in story:
-            if line.name == 'p':
-                stringify_replace = str(line).replace('<span style="text-decoration:underline;">', "<u>").\
-                    replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>").\
-                    replace("\xa0", "")
-                    # .replace("<p>", "").replace("</p>", "").\
-                    # replace('<p align="center">', "").replace('<p align="center;">', "").\
-                    # replace('<p style="text-align:center;">', "").\
-                lst_text.append(stringify_replace)
-                # print(stringify_replace)
-            elif line.name == 'div':
-                for child in line.descendants:
-                    if child.name == 'p':
-                        stringify_replace = str(child).replace('<span style="text-decoration:underline;">', "<u>"). \
-                            replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>"). \
-                            replace("\xa0", "")
-                        # print(stringify_replace)
-                        lst_text.append(stringify_replace)
-            else:
-                if str(line) != '\n':
-                    stringify_replace = str(line).replace('<br/>', "").replace("\xa0", "").strip()
-                    lst_text.append(stringify_replace)
-                    # print(stringify_replace)
-                # print(id(lst_text))
-        # else:
-        #     for line in story:
-        #         stringify_replace = str(line).replace("<center>", "").replace("</center>", "").replace("<br>", "").\
-        #             replace("</br>", "").replace("\\r\\n", "").replace("\\n", "").replace("<br>", "").replace("</br>", "").replace("<br/>", "")
-                # print(stringify_replace)
-                # lst_text.append(stringify_replace)
-        # for paragraph in html.select('p'):
-        #     # lst_p.append(paragraph.get_text()) # works, but doesn't preserve italics and bolded text
-        #     stringify_replace = str(paragraph).replace("<p>", "", 1).replace("</p>", "", 1).\
-        #         replace('<span style="text-decoration:underline;">', "").\
-        #         replace('<span style="text-decoration: underline;">', "").replace("</span>", "").\
-        #         replace('<p align="center">', "")
-        #     lst_p.append(stringify_replace)
-    else:
-        #Raise an exception if we failed to get any data from the url
-        raise Exception('Error retrieving contents at {}'.format(url))
-    # print(list(filter(None, lst_text)))
-    # print(lst_text)
-    # print(id(lst_text))
-    lst_text = list(filter(None, lst_text))
-    # print(id(lst_text))
-    # print(lst_text)
-    return lst_text # shouldn't this return be in the if branch?
-
-
-# def get_genre() -> List:
+# def get_text(url: str)-> List:
 #     """
-#     Return a list of all possible genres listed in fanfiction.net for a fanfic.
-#     From an arbitrary URL of a fanfiction page where a selection of all genres are listed.
+#     Downloads the fanfiction page and returns a list of all the paragraphs in a chapter.
 #     """
-#     url = "https://www.fanfiction.net/community/The-XX-Collective-Strong-Intelligent-Kickass-Women-in-Fanfiction/125666/"
+#     lst_text = []
 #     response = simple_get(url)
 #     if response is not None:
-#         html = BeautifulSoup(response, 'html.parser')
-#         genres = html.find("select", attrs={"name": "genreid"})
-#         lst_genres = genres.find('option').get_text('||').split('||')
-#         del lst_genres[0]
-#         # lst_genres = [genre.text for genre in genres.find('option')] # AttributeError: 'NavigableString' object has no attribute 'text'
-#     print(lst_genres)
-#     return lst_genres
-#     test = 'Chapters: 6'
-#     if '6' in test:
-#         print('true')
+#         html = BeautifulSoup(response, 'lxml')
+#         story = html.find("div", attrs={"id": "storytext"})
+#         if story is None:
+#             story = html.find("div", attrs={"id": "storycontent"})
+#
+#         for line in story:
+#             if line.name == 'p':
+#                 stringify_replace = str(line).replace('<span style="text-decoration:underline;">', "<u>").\
+#                     replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>").\
+#                     replace("\xa0", "")
+#                 lst_text.append(stringify_replace)
+#             elif line.name == 'div':
+#                 for child in line.descendants:
+#                     if child.name == 'p':
+#                         stringify_replace = str(child).replace('<span style="text-decoration:underline;">', "<u>"). \
+#                             replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>"). \
+#                             replace("\xa0", "")
+#                         lst_text.append(stringify_replace)
+#             else:
+#                 if str(line) != '\n':
+#                     stringify_replace = str(line).replace('<br/>', "").replace("\xa0", "").strip()
+#                     lst_text.append(stringify_replace)
 #     else:
-#         print('false')
-#       if 'Romance' in 'Romance/Adventure':
-#           print('true')
-#       else:
-#           print('false')
+#         #Raise an exception if we failed to get any data from the url
+#         raise Exception('Error retrieving contents at {}'.format(url))
+#
+#     lst_text = list(filter(None, lst_text))
+#     return lst_text
 
 
 def get_profile(url: str) -> Dict:
@@ -501,57 +312,6 @@ def get_profile(url: str) -> Dict:
                     words_split = stats_split[3].split(":")
                 genre = ''
         words = words_split[1]
-
-            # for i, s in enumerate(stats_split):
-            #     if 'Chapters:' in s:
-            #         # print(i)
-            #         chapters_split = stats_split[i].split(
-            #             ":")  # split() bc I only need the number --- 'Chapters: number"
-            #         chapters = chapters_split[1].strip()
-            #         words_split = stats_split[i + 1].split(":")
-            #         for g in genres:
-            #
-            #             if g in stats_split[i-2]:
-            #                 print(stats_split[i-2])
-            #                 genre = stats_split[i-2]
-            #                 characters = stats_split[i-1]
-            #                 break
-            #             elif g in stats_split[i-1]:
-            #                 genre = stats_split[i-1]
-            #                 characters = ''
-            #                 break
-            #             elif stats_split[i-1] == stats_split[1]:
-            #                 characters = ''
-            #                 genre = ''
-            #                 break
-                        # elif stats_split[i-1] != stats_split[1]:
-                        #     print('aahha')
-                        #     characters = stats_split[i-1]
-                        #     genre = ''
-                        #     break
-        # else: # profile key 'Chapters' doesn't exist
-        #     chapters = "1"
-        #     for g in genres:
-        #         if g in stats_split[2]:
-        #             genre = stats_split[2]
-        #             if "Words:" in stats_split[3]:
-        #                 words_split = stats_split[3].split(":")
-        #                 characters = ''
-        #             else:
-        #                 characters = stats_split[3]
-        #                 words_split = stats_split[4].split(":")
-        #             break
-        #         else:
-        #             genre = ''
-        #             if "Words:" in stats_split[2]:
-        #                 words_split = stats_split[2].split(":")
-        #                 characters = ''
-        #             else:
-        #                 print('why')
-        #                 characters = stats_split[2]
-        #                 words_split = stats_split[3].split(":")
-        #             break
-        # words = words_split[1]
 
         if "Status: Complete" in stats_split:
             status = "Complete"
@@ -705,7 +465,6 @@ def generate_pdf(url: str) -> None:
             Story.append(Spacer(1, 12))
         if len(lst_chap_links) - 1 != i:
             Story.append(PageBreak())
-        # Story.append(Paragraph(str(i), style=style))
 
     Story.append(Spacer(1, 12))
     doc.build(Story)
@@ -713,18 +472,9 @@ def generate_pdf(url: str) -> None:
 
 if __name__ == '__main__':
    # generate_pdf("https://www.fanfiction.net/s/1638751/1/Tales-From-the-House-of-the-Moon") # No <p> tags wtf; RecursionError: maximum recursion depth exceeded in comparison
-   # get_text("https://www.fanfiction.net/s/1638751/21/Tales-From-the-House-of-the-Moon")
-   # generate_pdf("https://www.fanfiction.net/s/11398817/1/Third-Time-Lucky")
-   # generate_pdf("https://www.fanfiction.net/s/6379811/1/The-Fourth-King")
-   # get_text("https://m.fanfiction.net/s/360519/1/Chimera")
-   #  get_text("https://m.fanfiction.net/s/3504281/1/Sky-on-Fire-I-Slow-Burn")
-   # get_text("https://www.fanfiction.net/s/11456734/1/Problem-Nine-And-Two")
-   # generate_pdf("https://www.fanfiction.net/s/11456734/1/Problem-Nine-And-Two")
-   # get_text("https://www.fanfiction.net/s/1638751/2/Tales-From-the-House-of-the-Moon")
-   # generate_pdf("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
    # get_text_r("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
    #  get_text_r("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
-   #  generate_pdf("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
+
 
 #TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links,
 # boxy stats, new <p></p> tag removal method, japanese characters, understand split() better, optimize, brave girl coming home repition of text, extra page at the end Brave girl ..., div with no p tags, div with p tags,
