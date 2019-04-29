@@ -2,8 +2,8 @@ import os
 from requests import get
 from requests.exceptions import RequestException
 from contextlib import closing
-from bs4 import BeautifulSoup
-from typing import List, Dict
+from bs4 import BeautifulSoup, Tag, NavigableString
+from typing import List, Dict, Optional, Any
 from collections import OrderedDict
 from reportlab.pdfgen import canvas
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
@@ -257,6 +257,64 @@ def generate_txt(url: str)-> None:
 #         raise Exception('Error retrieving contents at {}'.format(url))
 #     # print(lst_p)
 #     return lst_p
+
+
+def get_text_r_helper(line: BeautifulSoup) -> Any:
+        if isinstance(line, Tag) and line.name == 'p' or line.name == 'em' or line.name == 'strong':
+            # print(type(line))
+            stringify_replace = str(line).replace('<span style="text-decoration:underline;">', "<u>"). \
+                replace('<span style="text-decoration: underline;">', "<u>").replace("</span>", "</u>"). \
+                replace("\xa0", "").replace("<p></p>", "").replace('<br/>', "")
+            return stringify_replace
+        elif isinstance(line, NavigableString):
+            stringify_replace = str(line).replace("\xa0", "").replace('\n', "").strip()
+            return stringify_replace
+        else: # line.name == 'div'
+            lst_text = []
+            for l in line:
+                # print(type(l))
+                # print(l)
+                temp = get_text_r_helper(l)
+                if isinstance(temp, list):
+                    lst_text.extend(temp)
+                else:
+                    lst_text.append(temp)
+            return lst_text
+
+
+def get_text_r(url: str) -> List:
+    lst_text = []
+    response = simple_get(url)
+    if response is not None:
+        html = BeautifulSoup(response, 'lxml')
+        story = html.find("div", attrs={"id": "storytext"})
+        if story is None:
+            story = html.find("div", attrs={"id": "storycontext"})
+        # print(story.prettify())
+        # return
+        # i = 0
+        for line in story:
+            # print(type(line), line)
+            temp = get_text_r_helper(line)
+            if isinstance(temp, list):
+                lst_text.extend(temp)
+            else:
+                lst_text.append(temp)
+            # i += 1
+            # if i == 112:
+            #     lst_text = list(filter(None, lst_text))
+            #     print(lst_text)
+            #     return lst_text
+    else:
+        #Raise an exception if we failed to get any data from the url
+        raise Exception('Error retrieving contents at {}'.format(url))
+    lst_text = list(filter(None, lst_text))
+    print(lst_text)
+    return lst_text
+
+
+
+
 
 
 def get_text(url: str)-> List:
@@ -641,7 +699,7 @@ def generate_pdf(url: str) -> None:
             Story.append(Paragraph(lst_chap_names[i], h1))
         Story.append(Spacer(1, 12))
         Story.append(Spacer(1, 12))
-        lst_paragraphs = get_text(lst_chap_links[i])
+        lst_paragraphs = get_text_r(lst_chap_links[i])
         for paragraph in lst_paragraphs:
             Story.append(Paragraph(paragraph, style=style))
             Story.append(Spacer(1, 12))
@@ -656,6 +714,7 @@ def generate_pdf(url: str) -> None:
 if __name__ == '__main__':
    # generate_pdf("https://www.fanfiction.net/s/1638751/1/Tales-From-the-House-of-the-Moon") # No <p> tags wtf; RecursionError: maximum recursion depth exceeded in comparison
    # get_text("https://www.fanfiction.net/s/1638751/21/Tales-From-the-House-of-the-Moon")
+   # generate_pdf("https://www.fanfiction.net/s/11398817/1/Third-Time-Lucky")
    # generate_pdf("https://www.fanfiction.net/s/6379811/1/The-Fourth-King")
    # get_text("https://m.fanfiction.net/s/360519/1/Chimera")
    #  get_text("https://m.fanfiction.net/s/3504281/1/Sky-on-Fire-I-Slow-Burn")
@@ -663,10 +722,9 @@ if __name__ == '__main__':
    # generate_pdf("https://www.fanfiction.net/s/11456734/1/Problem-Nine-And-Two")
    # get_text("https://www.fanfiction.net/s/1638751/2/Tales-From-the-House-of-the-Moon")
    # generate_pdf("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
-   # get_text("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
-   #  get_text("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
-   generate_pdf("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
-
+   # get_text_r("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
+   #  get_text_r("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
+   #  generate_pdf("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
 
 #TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links,
 # boxy stats, new <p></p> tag removal method, japanese characters, understand split() better, optimize, brave girl coming home repition of text, extra page at the end Brave girl ..., div with no p tags, div with p tags,
