@@ -153,7 +153,7 @@ def get_text_r_helper(line: BeautifulSoup) -> Any:
         elif isinstance(line, NavigableString):
             stringify_replace = str(line).replace("\xa0", "").replace('\n', "").strip()
             return stringify_replace
-        else: # line.name == 'div'
+        else: # any other tag 
             lst_text = []
             for l in line:
                 temp = get_text_r_helper(l)
