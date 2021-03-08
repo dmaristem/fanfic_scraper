@@ -470,14 +470,7 @@ def generate_pdf(url: str) -> None:
     doc.build(Story)
 
 
-if __name__ == '__main__':
-   # generate_pdf("https://www.fanfiction.net/s/1638751/1/Tales-From-the-House-of-the-Moon") # No <p> tags wtf; RecursionError: maximum recursion depth exceeded in comparison
-   # get_text_r("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
-   #  get_text_r("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
+# if __name__ == '__main__':
+#   generate_pdf(" ")
 
 
-#TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links,
-# boxy stats, new <p></p> tag removal method, japanese characters, understand split() better, optimize, brave girl coming home repition of text, extra page at the end Brave girl ..., div with no p tags, div with p tags,
-# tales from the house of the moon - chapter 18, 21 -- for line in story, line is acting like a nested paragraph. So all paragraphs are appended at once. UGHHH
-# ReportLab supports all <i>, <em>, <strong>, <b>, and <u>. All other tags, even nonsensical ones, it does not show. i.e. <p> shows up as nothing. ''
-# <center><strong><em> ... <p> ... </p> I didn't account for nested <p> tags
