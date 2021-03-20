@@ -1,5 +1,5 @@
 import os
-from requests import get
+from requests import get, Session
 from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup, Tag, NavigableString
@@ -23,10 +23,15 @@ def simple_get(url:str):
     Attempts to get the content at 'url' by making an HTTP GET request.
     If the content-type of response is some kind of HTML/XML, return the text content, otherwise return None.
     """
+    # Session().proxies['http'] = 'socks5://localhost:9150'  # 9150 for browser; 9050 for TOR service
+    proxy = {'https': 'socks5://localhost:9150'}
+    # print(Session().headers)
+    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                             ' (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'}
     try:
         #The closing() function ensures that any network resources are freed when they go out of scope in the with block.
         #Using closing() is a good practice to help prevent fatal errors and network timeouts
-        with closing(get(url, stream=True)) as resp:
+        with closing(Session().get(url, headers=headers, proxies=proxy, stream=True)) as resp:
             if is_good_response(resp):
                 print("HTTP Error: {0}".format(resp.raise_for_status()))
                 print(resp.headers)
@@ -78,6 +83,7 @@ def get_num_of_chapters(url: str) -> int:
         #Raise an exception if we failed to get any data from the url
         raise Exception('Error retrieving contents at {}'.format(url))
 
+
 def slice_link(url: str) -> str:
     """
     Return a modified link of the fanfic to be scraped. Modified to insert chapter values into the fanfic link.
@@ -90,6 +96,7 @@ def slice_link(url: str) -> str:
     chap = '/{}/'
     link = id_ + chap + title
     return link
+
 
 def generate_links(url: str) -> List:
     """
@@ -165,6 +172,10 @@ def get_text_r_helper(line: BeautifulSoup) -> Any:
 
 
 def get_text_r(url: str) -> List:
+    """
+    Downloads the fanfiction page and returns a list of all the paragraphs/lines in a chapter. HTML included.
+    r stands for recursively.
+    """
     lst_text = []
     response = simple_get(url)
     if response is not None:
@@ -182,12 +193,13 @@ def get_text_r(url: str) -> List:
         #Raise an exception if we failed to get any data from the url
         raise Exception('Error retrieving contents at {}'.format(url))
     lst_text = list(filter(None, lst_text))
+    print(lst_text)
     return lst_text
 
 
 # def get_text(url: str)-> List:
 #     """
-#     Downloads the fanfiction page and returns a list of all the paragraphs in a chapter.
+#     Downloads the fanfiction page and returns a list of all the paragraphs in a chapter. HTML included.
 #     """
 #     lst_text = []
 #     response = simple_get(url)
@@ -219,6 +231,7 @@ def get_text_r(url: str) -> List:
 #         raise Exception('Error retrieving contents at {}'.format(url))
 #
 #     lst_text = list(filter(None, lst_text))
+#     print(lst_text)
 #     return lst_text
 
 
@@ -266,7 +279,7 @@ def get_profile(url: str) -> Dict:
         # check for existence of certain profile keys i.e. genre, characters, chapters, and status
         genres = ['Adventure', 'Angst', 'Crime', 'Drama', 'Family', 'Fantasy', 'Friendship', 'General', 'Horror',
                   'Humor',
-                  'Hurt/Comfort', 'Mystery', 'Parody', 'Poetry', 'Romance', 'Sci-Fi', 'Spiritual', 'Supernatural',
+                  'Hurt', 'Comfort', 'Mystery', 'Parody', 'Poetry', 'Romance', 'Sci-Fi', 'Spiritual', 'Supernatural',
                   'Suspense',
                   'Tragedy', 'Western']
 
@@ -279,19 +292,23 @@ def get_profile(url: str) -> Dict:
                     characters = ''
                     chapters = stats_split[3].split(":")[1].strip()
                     words_split = stats_split[4].split(":")
+
                 else:
                     characters = stats_split[3]
                     chapters = stats_split[4].split(":")[1].strip()
                     words_split = stats_split[5].split(":")
-            else: # genre doesn't exist
+
+            else:   # genre doesn't exist
                 if "Chapters:" in stats_split[2]:
                     characters = ''
                     chapters = stats_split[2].split(":")[1].strip()
                     words_split = stats_split[3].split(":")
+
                 else:
                     characters = stats_split[2]
                     chapters = stats_split[3].split(":")[1].strip()
                     words_split = stats_split[4].split(":")
+
                 genre = ''
         else: # single chapter fic; "Chapters' profile key DNE
             chapters = "1"
@@ -470,10 +487,42 @@ def generate_pdf(url: str) -> None:
     doc.build(Story)
 
 
+def generate_text_file(url: str) -> None:
+    """
+    Generate a text file from the given URL.
+    :param url: A link to a fanfiction on a site such as fanfiction.net.
+    """
+    lst_chap_links = generate_links(url)
+    with open("fanfiction.txt", "a", encoding="utf-8") as file_object:
+        for i in range(len(lst_chap_links)):
+            response = simple_get(lst_chap_links[i])
+            if response is not None:
+                html = BeautifulSoup(response, 'lxml')
+                story = html.find("div", attrs={"id": "storytext"})
+                # print(type(story))
+                # Destroy/decompose the 'strong tags' in the scraped html (those correspond to Author Notes in this fanfic)
+                destroy_tags = html.find("div", attrs={"id": "storytext"}).find_all("strong")
+                for destroy_tag in destroy_tags:
+                    destroy_tag.decompose()
+                # print(story)
+                if story is None:
+                    story = html.find("div", attrs={"id": "storycontext"}).text
+            else:
+                # Raise an exception if we failed to get any data from the url
+                raise Exception('Error retrieving contents at {}'.format(url))
+            file_object.write(story.text)
+            # lst_paragraphs = get_text_r(lst_chap_links[i])
+            # for paragraph in lst_paragraphs:
+            #     file_object.write(paragraph)
+
+    #TODO: Purge the HTML tags from the text gotten from get_text_r ...
+
+
+
+
 if __name__ == '__main__':
-   # generate_pdf("https://www.fanfiction.net/s/1638751/1/Tales-From-the-House-of-the-Moon") # No <p> tags wtf; RecursionError: maximum recursion depth exceeded in comparison
-   # get_text_r("https://www.fanfiction.net/s/4844985/1/brave-soldier-girl-comes-marching-home")
-   #  get_text_r("https://www.fanfiction.net/s/1874207/1/Thessalaniki")
+    generate_pdf("https://www.fanfiction.net/s/8099181/1/Avatar-of-Victory")
+
 
 
 #TODO: never take in mobile version of fanfiction.net, UnicodeEncodeError, PDF chapter links,
@@ -481,3 +530,5 @@ if __name__ == '__main__':
 # tales from the house of the moon - chapter 18, 21 -- for line in story, line is acting like a nested paragraph. So all paragraphs are appended at once. UGHHH
 # ReportLab supports all <i>, <em>, <strong>, <b>, and <u>. All other tags, even nonsensical ones, it does not show. i.e. <p> shows up as nothing. ''
 # <center><strong><em> ... <p> ... </p> I didn't account for nested <p> tags
+# download from a webpage ?
+# GUI for inputting in a link
